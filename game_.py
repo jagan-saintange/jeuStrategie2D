@@ -31,18 +31,20 @@ class Game:
         perso1 = Personnage('number1', 'notre jeu', 'feu')
         perso2 = Personnage('number2', 'notre jeu', 'eau')
         perso3 = Personnage('number3', 'notre jeu', 'plante')
+        perso4 = Personnage('number2', 'notre jeu', 'eau')
+        perso5 = Personnage('number3', 'notre jeu', 'plante')
         
         self.screen = screen
         self.player_units = [Archer(perso=perso1, x=0, y=0, health=100, team='player1', attack_power=4, defense_power=3, agility_power=2, speed = 60),
                              Aerien(perso=perso2, x=1, y=0, health=100, team='player1', attack_power=1, defense_power=5, agility_power=1, speed = 85),
                              Terrien(perso=perso3, x=1, y=0, health=100, team='player1', attack_power=6, defense_power=5, agility_power=1, speed = 10),
-                             Terrien(perso=perso3, x=6, y=6, health=80, team='player1', attack_power=5, defense_power=4, agility_power=2, speed = 40)
+                             Terrien(perso=perso4, x=6, y=6, health=80, team='player1', attack_power=5, defense_power=4, agility_power=2, speed = 40)
                              ]
 
         self.enemy_units = [Terrien(perso=perso3, x=6, y=6, health=80, team='enemy', attack_power=5, defense_power=4, agility_power=2, speed = 40),
                             Archer(perso=perso1, x=7, y=6, health=80, team='enemy',  attack_power=2, defense_power=2, agility_power=1, speed = 70),
                             Aerien(perso=perso2, x=1, y=0, health=100, team='enemy', attack_power=1, defense_power=5, agility_power=1, speed = 65),
-                            Archer(perso=perso1, x=0, y=0, health=100, team='enemy', attack_power=4, defense_power=3, agility_power=2, speed = 60)
+                            Archer(perso=perso5, x=0, y=0, health=100, team='enemy', attack_power=4, defense_power=3, agility_power=2, speed = 60)
                             ]
 
 

@@ -2,7 +2,6 @@
 import pygame
 import random as rd
 from abc import ABC, abstractmethod
-from game import * 
 
 # Constantes
 GRID_SIZE = 8
@@ -152,9 +151,9 @@ class Unit(Personnage):
 
     def HPloss(self, degats_brut : int, other_unit):
         multiplicateur = self.multiplicateur(other_unit)
-        print(multiplicateur)
+        #print(multiplicateur)
         minus_HP = -1 * int((multiplicateur * degats_brut))
-        print(f"{self.perso.nom} passe de {self.health}", end='')
+        print(f"{self.perso.nom} de {self.team} passe de {self.health}", end='')
         self.health += minus_HP
         print(f' à {self.health}')
         if self.health < 0:
