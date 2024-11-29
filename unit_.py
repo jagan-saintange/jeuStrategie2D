@@ -16,33 +16,39 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
 #liste nature possible
-nature = ['timide', 'cool', 'engagé']#, 'passioné', 'ingénieux', 'HPI', 'TDAH', 'TSA', 'drogué', 'flamboyant', 'délétère', 'morbide', 'cacophonique', 'puissant', 'aimant', 'voltigeur', 'dépressif', 'désespéré', 'optimiste', 'calme', 'tenace', 'démoniaque', 'divin']
+nature = ['timide', 'cool', 'engagé']#, 'passioné', 'ingénieux', 'flamboyant', 'délétère', 'morbide', 'cacophonique', 'puissant', 'aimant', 'voltigeur', 'dépressif', 'désespéré', 'optimiste', 'calme', 'tenace', 'démoniaque', 'divin']
 
 #dictionnaire de dictionnaires contenant les propriétés supp de  des natures
-nature = {'timide' : {'attack_power_coeff' : -0.1, 'defense_power_coeff' : 0.1, 'vitesse_coeff' : 0.4},
-          'cool' : {'attack_power_coeff' : 0.2, 'defense_power_coeff' : 0.1, 'vitesse_coeff' : 0.2},
-          'engagé' : {'attack_power_coeff' : 0.3, 'defense_power_coeff' : -0.2, 'vitesse_coeff' : 0.1}
-          }
+nature_carac = {None : {'attack_power_coeff' : 0., 'defense_power_coeff' : 0.,'agility_power_coeff' : 0., 'speed_coeff' : 0.},
+        'timide' : {'attack_power_coeff' : -0.1, 'defense_power_coeff' : 0.1,'agility_power_coeff' : -0.1, 'speed_coeff' : 0.4},
+        'cool' : {'attack_power_coeff' : 0.2, 'defense_power_coeff' : -0.1,'agility_power_coeff' : 0.1, 'speed_coeff' : 0.2},
+        'engagé' : {'attack_power_coeff' : 0.3, 'defense_power_coeff' : -0.2, 'agility_power_coeff' : 0.2, 'speed_coeff' : 0.1},
+        'None' : {'attack_power_coeff' : 0, 'defense_power_coeff' : 0, 'agility_power_coeff' : 0, 'speed_coeff' : 0}
+        }
 
 
 class Personnage: #if perso.univers = le selected alors on passe toutes les unités en player1
-    def __init__(self, nom, univers, de_type):
+    def __init__(self, nom, univers, de_type, description=None, biographie=None):
         self.nom = nom #est un attribut public
-        self._univers = univers #est un attribut privé non accessible par convention
+        self.univers = univers #est un attribut privé non accessible par convention A RECTIFIER
         self.de_type = de_type #est un attribut privé avec getter et setter
-        self.nature_chooser() #générer la nature de ce personnage pour cette partie
+        self.de_nature = None
+        self.__nature_chooser() #générer la nature de ce personnage pour cette partie
+        self.description = description #attribut public
+        self.biographie = biographie #attribut public
     
-    def nature_chooser(self):
-        de_nature = [rd.randint(1, len(nature))]
-        self.de_nature = de_nature #est un attribut privé mais accessible en lecture
+
+          
     
     @property
     def de_type(self):
-        self._de_type
-        
+        return self.__de_type
+    
+       
     @property
     def de_nature(self):
-        self._de_nature
+        return self.__de_nature
+    
         
     @de_type.setter
     def de_type(self, value):
@@ -50,14 +56,26 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
             print(value)
             raise TypeError("le type doit être 'feu', 'eau' ou 'plante'")
         self.__de_type = value
-        
+     
+    
     @de_nature.setter
     def de_nature(self, value):
-        self._de_nature = value
-        
+        self.__de_nature = value
+        #print(f'set nature est {self.__de_nature}')
+    
+    
+    def __nature_chooser(self): #est une méthode privée
+        de_nature = nature[rd.randint(0, len(nature)-1)]
+        self.de_nature = de_nature #est un attribut privé
+        #print(self.de_nature)
 
+    @abstractmethod #will be defined in heritage class, mais j'implémente déjà ici car c'est ici qu'on définit la nature et c'est dans les héritiers de Unit qu'on assigne des stats 
+    #aussi in case of developpement futur d'effets différents pour les conséquences de la nature en fonction des classes
+    def nature_effect(self):
+        pass
+    
 
-class Unit(Personnage):
+class Unit():
     """
     Classe pour représenter une unité.
 
@@ -134,8 +152,12 @@ class Unit(Personnage):
         pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
     
+    
+    #@abstractmethod #est différente pour chaque type d'unité
+    #def resistance
+    
     @staticmethod
-    def ponderation(a, b): #plus ils sont fort plus c'est la différence entre les stats qui va compter
+    def ponderation(a, b): #plus ils sont faibles en niveau plus c'est la différence entre les stats qui va compter
         seuil = max(a,b)/2
         frac = abs(a-b)/max(a,b)
         if abs(a-b) > seuil:
@@ -144,8 +166,8 @@ class Unit(Personnage):
     
     
     def multiplicateur(self, other_unit):
-        vs_def = other_unit.defense_power
-        vs_att = self.attack_power
+        vs_def = self.defense_power
+        vs_att = other_unit.attack_power
         return Unit.ponderation(vs_def, vs_att)*0.5+1
 
 
@@ -156,7 +178,7 @@ class Unit(Personnage):
         print(f"{self.perso.nom} de {self.team} passe de {self.health}", end='')
         self.health += minus_HP
         print(f' à {self.health}')
-        if self.health < 0:
+        if self.health <= 0:
             self.health = 0
             print(f'unité {self.perso.nom} de {self.team} est neutralisé')
             
@@ -168,7 +190,7 @@ class Unit(Personnage):
     #MODIF ATTRIBUTS
     @property
     def perso(self):
-        return self._perso
+        return self.__perso
     
     @property
     def x(self):
@@ -191,7 +213,7 @@ class Unit(Personnage):
         if not isinstance(value, Personnage):
             print(value)
             raise TypeError('perso doit être un objet de Personnage')
-        self._perso = value
+        self.__perso = value
         
     @x.setter
     def x(self, value):
@@ -243,11 +265,26 @@ class Archer(Unit):
     """
     def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed):
         Unit.__init__(self, perso, x, y, health, team)
-        self.attack_power = attack_power
-        self.defense_power = defense_power
-        self.agility_power = agility_power
-        self.speed = speed
+        #print('\n',perso.de_nature)
+        fixed_power = self.nature_effect(perso, attack_power, defense_power, agility_power, speed)
+        self.attack_power = fixed_power['attack_power']
+        self.defense_power = fixed_power['defense_power']
+        self.agility_power = fixed_power['agility_power']
+        self.speed = fixed_power['speed']
         
+        
+    def nature_effect(self, perso, attack_power, defense_power, agility_power, speed):
+        coeff_attack = nature_carac[perso.de_nature]['attack_power_coeff']
+        coeff_defense = nature_carac[perso.de_nature]['defense_power_coeff']
+        coeff_agility = nature_carac[perso.de_nature]['agility_power_coeff'] 
+        coeff_speed = nature_carac[perso.de_nature]['speed_coeff']   
+        fixed_power = {}
+        fixed_power['attack_power'] = int(coeff_attack * attack_power + attack_power)
+        fixed_power['defense_power'] = int(coeff_defense * defense_power + defense_power)
+        fixed_power['agility_power'] = int(coeff_agility * agility_power + agility_power)
+        fixed_power['speed'] = int(coeff_speed * speed + speed)
+        
+        return fixed_power
 
     @property
     def speed(self):
