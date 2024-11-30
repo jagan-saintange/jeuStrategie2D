@@ -23,7 +23,6 @@ nature_carac = {None : {'attack_power_coeff' : 0., 'defense_power_coeff' : 0.,'a
         'timide' : {'attack_power_coeff' : -0.1, 'defense_power_coeff' : 0.1,'agility_power_coeff' : -0.1, 'speed_coeff' : 0.4},
         'cool' : {'attack_power_coeff' : 0.2, 'defense_power_coeff' : -0.1,'agility_power_coeff' : 0.1, 'speed_coeff' : 0.2},
         'engagé' : {'attack_power_coeff' : 0.3, 'defense_power_coeff' : -0.2, 'agility_power_coeff' : 0.2, 'speed_coeff' : 0.1},
-        'None' : {'attack_power_coeff' : 0, 'defense_power_coeff' : 0, 'agility_power_coeff' : 0, 'speed_coeff' : 0}
         }
 
 
@@ -141,7 +140,7 @@ class Unit():
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.HPloss(20, target)
+            target.HPloss(20, self) #du point de vue du target, il y a perte de pv
 
     def draw(self, screen):
         """Affiche l'unité sur l'écran."""
@@ -164,29 +163,69 @@ class Unit():
             return 1.0
         return frac
     
-    
     def multiplicateur(self, other_unit):
         vs_def = self.defense_power
         vs_att = other_unit.attack_power
         return Unit.ponderation(vs_def, vs_att)*0.5+1
 
 
+    def additionneur(self, other, degats):
+        comp = self.comparateur_faiblesse_resistance(other)
+        faiblesse, resistance = 0, 0
+        if comp[0]:
+            faiblesse += degats
+            print('la faiblesse est appliquée')
+        if comp[1]:
+            resistance += -(degats/2) 
+            print('la résistance est appliquée')
+        return int(faiblesse + resistance)
+    
+    
     def HPloss(self, degats_brut : int, other_unit):
         multiplicateur = self.multiplicateur(other_unit)
         #print(multiplicateur)
-        minus_HP = -1 * int((multiplicateur * degats_brut))
+        degats = int((multiplicateur * degats_brut))
+        comparaison = self.additionneur(other_unit, degats)
+        minus_HP = -1 * (degats + comparaison)
         print(f"{self.perso.nom} de {self.team} passe de {self.health}", end='')
         self.health += minus_HP
-        print(f' à {self.health}')
         if self.health <= 0:
             self.health = 0
+            print(f' à {self.health}')
             print(f'unité {self.perso.nom} de {self.team} est neutralisé')
-            
+        else:
+            print(f' à {self.health}')
         
-
-    #def type_unite(self):
+    def comparateur_faiblesse_resistance(self, other):
+        faiblesse = False
+        resistance = False
         
+        if isinstance(self, Archer):
+            if isinstance(other, Terrien):
+                faiblesse = True
+        elif isinstance(self, Terrien):
+            if isinstance(other, Aerien):
+                faiblesse = True
+        elif isinstance(self, Aerien):
+            if isinstance(other, Archer):
+                faiblesse = True
         
+        print(self.perso.de_type)
+        if self.perso.de_type == "feu":
+            if other.perso.de_type == 'plante':
+                resistance = True
+        elif self.perso.de_type == "eau":
+            print('je suis eau')
+            if other.perso.de_type == 'feu':
+                resistance = True
+        elif self.perso.de_type == "plante":
+            if other.perso.de_type == 'eau':
+                resistance = True
+        
+        print(faiblesse, resistance)
+        return faiblesse, resistance
+    
+    
     #MODIF ATTRIBUTS
     @property
     def perso(self):
@@ -295,9 +334,11 @@ class Archer(Unit):
         if not isinstance(value, int):
             print(value)
             raise TypeError("l'argument doit etre un int")
-        if not 50<=value<=100:
+        if not 50<=value:
             print(value)
-            raise TypeError("la vitesse d'un archer doit être entre 50 et 100")
+            if value<50:
+                value = 50
+            #raise TypeError("la vitesse d'un archer doit être entre 50 et 100")
         self.__health = value
     
     
@@ -305,13 +346,29 @@ class Aerien(Unit):
     """
     Classe qui définit les unités de type archer
     """
-    def __init__(self, perso,  x, y, health, team, attack_power, defense_power, agility_power, speed):
+    def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed):
         Unit.__init__(self, perso, x, y, health, team)
-        self.attack_power = attack_power
-        self.defense_power = defense_power
-        self.agility_power = agility_power
-        self.speed = speed
-
+        #print('\n',perso.de_nature)
+        fixed_power = self.nature_effect(perso, attack_power, defense_power, agility_power, speed)
+        self.attack_power = fixed_power['attack_power']
+        self.defense_power = fixed_power['defense_power']
+        self.agility_power = fixed_power['agility_power']
+        self.speed = fixed_power['speed']
+        
+        
+    def nature_effect(self, perso, attack_power, defense_power, agility_power, speed):
+        coeff_attack = nature_carac[perso.de_nature]['attack_power_coeff']
+        coeff_defense = nature_carac[perso.de_nature]['defense_power_coeff']
+        coeff_agility = nature_carac[perso.de_nature]['agility_power_coeff'] 
+        coeff_speed = nature_carac[perso.de_nature]['speed_coeff']   
+        fixed_power = {}
+        fixed_power['attack_power'] = int(coeff_attack * attack_power + attack_power)
+        fixed_power['defense_power'] = int(coeff_defense * defense_power + defense_power)
+        fixed_power['agility_power'] = int(coeff_agility * agility_power + agility_power)
+        fixed_power['speed'] = int(coeff_speed * speed + speed)
+        
+        return fixed_power
+    
     @property
     def speed(self):
         return self.__x 
@@ -321,9 +378,12 @@ class Aerien(Unit):
         if not isinstance(value, int):
             print(value)
             raise TypeError("l'argument doit etre un int")
-        if not 50<=value<=100:
+        if not 50<=value:
             print(value)
-            raise TypeError("la vitesse d'un aerien doit être entre 50 et 100")
+            if value<50:
+                value = 50
+            #else:
+            #    raise TypeError("la vitesse d'un aerien doit être entre 50 et 100")
         self.__health = value
         
 class Terrien(Unit):
@@ -332,12 +392,27 @@ class Terrien(Unit):
     """
     def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed):
         Unit.__init__(self, perso, x, y, health, team)
-        self.attack_power = attack_power
-        self.defense_power = defense_power
-        self.agility_power = agility_power
-        self.speed = speed
+        #print('\n',perso.de_nature)
+        fixed_power = self.nature_effect(perso, attack_power, defense_power, agility_power, speed)
+        self.attack_power = fixed_power['attack_power']
+        self.defense_power = fixed_power['defense_power']
+        self.agility_power = fixed_power['agility_power']
+        self.speed = fixed_power['speed']
         #self.luck = random.randint(a, b) #peut etre rendre agility aléatoire mais bornée un fonction des genres d'unités, à voir
-    
+        
+    def nature_effect(self, perso, attack_power, defense_power, agility_power, speed):
+        coeff_attack = nature_carac[perso.de_nature]['attack_power_coeff']
+        coeff_defense = nature_carac[perso.de_nature]['defense_power_coeff']
+        coeff_agility = nature_carac[perso.de_nature]['agility_power_coeff'] 
+        coeff_speed = nature_carac[perso.de_nature]['speed_coeff']   
+        fixed_power = {}
+        fixed_power['attack_power'] = int(coeff_attack * attack_power + attack_power)
+        fixed_power['defense_power'] = int(coeff_defense * defense_power + defense_power)
+        fixed_power['agility_power'] = int(coeff_agility * agility_power + agility_power)
+        fixed_power['speed'] = int(coeff_speed * speed + speed)
+        
+        return fixed_power
+        
     # @abstractmethod    
     # def attack(self, target):
     #     """Attaque une unité cible."""
@@ -350,6 +425,8 @@ class Terrien(Unit):
     #     #utilise la precision de l'adversaire, la rapidité du joueur, et possiblement la luck des joueurs
     #     pass
     
+
+
     @property
     def speed(self):
         return self.__x 
@@ -361,6 +438,10 @@ class Terrien(Unit):
             raise TypeError("l'argument doit etre un int")
         if not 10<=value<=60:
             print(value)
-            raise TypeError("la vitesse d'un terrien doit être entre 10 et 60")
+            if value>60:
+                value = 60
+            else:
+                value = 10
+            #raise TypeError("la vitesse d'un terrien doit être entre 10 et 60")
         self.__health = value
 

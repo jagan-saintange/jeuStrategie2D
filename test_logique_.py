@@ -18,20 +18,51 @@ perso2 = Personnage('number2', 'notre jeu', 'eau')
 perso3 = Personnage('number3', 'notre jeu', 'plante')
 
 #Personnages par univers
+Freddy = Personnage('Freddy', 'FNAF', 'plante')
+Chica = Personnage('Chica', 'FNAF', 'feu')
+Bonnie = Personnage('Bonnie', 'FNAF', 'eau')
+Foxy = Personnage('Foxy', 'FNAF', 'feu')
+
+Eren = Personnage('Eren', 'SNK', 'feu')
+Armin = Personnage('Armin', 'SNK', 'eau')
+Mikasa = Personnage('Mikasa', 'SNK', 'feu')
+Levi = Personnage('Levi', 'SNK', 'eau')
+
+Dre = Personnage('Snoop', 'WestCoast', 'eau')
+Eminem = Personnage('Eminem', 'WestCoast', 'feu')
+Fifty = Personnage('Fifty', 'WestCoast', 'eau')
+Snoop = Personnage('Snoop', 'WestCoast', 'plante')
+
+Nietzsche = Personnage('Nietzsche', 'philosophe', 'eau')
+Marx = Personnage('Marx', 'philosophe', 'feu')
+Camus = Personnage('Camus', 'philosophe', 'plante')
+Socrates = Personnage('Socrates', 'philosophe', 'plante')
+
+Trump = Personnage('Trump', 'USA', 'feu', 'orange', 'président des états Unis')
+Biden = Personnage('Biden', 'USA', 'feu', 'vieux', 'président des états Unis')
+Obama = Personnage('Obama', 'USA', 'feu', 'noir', 'président des états Unis')
+Bush = Personnage('Bush (père et fils)', 'USA', 'feu', 'blancs', 'présidents des états Unis')
+
+Stop = Personnage('Stop', 'USA', 'feu', 'rond rouge, il est écrit "STOP" en gros dessus', 'est le panneau Stop')
+Danger = Personnage('Trump', 'USA', 'plante')
+tourner_a_droite = Personnage('Trump', 'USA', 'plante')
+aire_de_repos = Personnage('Trump', 'USA', 'plante')
+
+
  
 #combattants par défaut
 fighter_perso1 = Archer(perso=perso1, x=0, y=0, health=100, team='None', attack_power=4, defense_power=3, agility_power=2, speed = 60)
 fighter_perso2 = Aerien(perso=perso2, x=1, y=0, health=100, team='None', attack_power=1, defense_power=5, agility_power=1, speed = 85)
-fighter_perso3 = Terrien(perso=perso3, x=1, y=0, health=100, team='None', attack_power=6, defense_power=5, agility_power=1, speed = 10)
-fighter_perso4 = Terrien(perso=perso2, x=6, y=6, health=80, team='None', attack_power=5, defense_power=4, agility_power=2, speed = 40)
+fighter_perso3 = Terrien(perso=perso3, x=1, y=1, health=100, team='None', attack_power=6, defense_power=5, agility_power=1, speed = 10)
+fighter_perso4 = Terrien(perso=perso2, x=0, y=1, health=80, team='None', attack_power=5, defense_power=4, agility_power=2, speed = 40)
 fighter_perso5 = Terrien(perso=perso3, x=6, y=6, health=80, team='None', attack_power=5, defense_power=4, agility_power=2, speed = 40)
 fighter_perso6 = Archer(perso=perso1, x=7, y=6, health=80, team='None',  attack_power=2, defense_power=2, agility_power=1, speed = 70)
-fighter_perso7 = Aerien(perso=perso2, x=1, y=0, health=100, team='None', attack_power=1, defense_power=5, agility_power=1, speed = 65)
-fighter_perso8 = Archer(perso=perso3, x=0, y=0, health=100, team='None', attack_power=4, defense_power=3, agility_power=2, speed = 60)
+fighter_perso7 = Aerien(perso=perso2, x=7, y=7, health=100, team='None', attack_power=1, defense_power=5, agility_power=1, speed = 65)
+fighter_perso8 = Archer(perso=perso3, x=6, y=6, health=100, team='None', attack_power=4, defense_power=3, agility_power=2, speed = 60)
 
        
 #Combattants par Univers
-        
+
 
 liste_combattants = [fighter_perso1, fighter_perso2, fighter_perso3, fighter_perso4, fighter_perso5, fighter_perso6, fighter_perso7, fighter_perso8]
 
@@ -114,6 +145,16 @@ def main():
     test.selector('player1', 'univers', 'notre jeu')
     print(fighter_perso3.team)
     
+    
+    class Mere:
+        def test(self):
+            print(isinstance(self, Fille))
+    
+    class Fille(Mere):
+        pass
+        
+    a = Fille()
+    a.test()
     
     """
     hello = 'blabla'
