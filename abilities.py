@@ -15,7 +15,7 @@ class Competence:
 
 class Poison(Competence): # Compétence offensive : une seule cible, portée de 2 cases, effet persistant (-15 PdV par tour)
     def __init__(self): # Initialisation des attributs spécifiques
-        super().__init__("Poison", portee = 2, dommage = 15, duree = 2) # Portée de l'attaque = 2, dégâts infligés = -15 PdV, durée = 2 tours
+        super().__init__("Poison", portee = 2, dommage = 15, duree = 3) # Portée de l'attaque = 2, dégâts infligés = -15 PdV, durée = 2 tours
 
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
@@ -35,7 +35,7 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
         super().__init__("Pluie de projectiles", portee = 5, dommage = 40) # Portée de l'attaque = 5, dégâts infligés = -40 PdV/cible
 
     def utiliser(self, utilisateur, cible, game):
-        if not isinstance(cible, Unit) or cible.team != "enemy": # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
+        if not isinstance(cible, Unit):  # Vérifie si une case a bien été sélectionnée
             print("Aucune cible sélectionnée.")
             return
         cible_x, cible_y = cible.x, cible.y # Décomposition des coordonnées de la cible en 2 variables distinctes : cible_x et cible_y
@@ -43,10 +43,17 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
             print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) est trop loin pour lancer Pluie de Projectiles.")
             return # Fin de l'exécution
         print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) lance Pluie de Projectiles sur la zone centrée en ({cible_x}, {cible_y})!")
-        for unit in game.enemy_units: # On parcourt toutes les unités ennemies présentes sur le plateau
-            if abs(unit.x - cible_x) <= 1 and abs(unit.y - cible_y) <= 1: # On s'assure que l'unité ennemie se trouve dans la zone 3x3 autour de la case désignée
-                unit.take_damage(self.dommage) # Application des dégâts à l'unité ennemie
-                print(f"{unit.team} unité à ({unit.x}, {unit.y}) perd {self.dommage} points de vie à cause de Pluie de Projectiles!")
+        for dx in range(-1, 2): # Balayage de la zone d'attaque (matrice 3x3)
+            for dy in range(-1, 2):
+                zone_x, zone_y = cible_x + dx, cible_y + dy
+                if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE:
+                    for unit in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
+                        if abs(unit.x - cible_x) <= 1 and abs(unit.y - cible_y) <= 1: # Présence de l'unité dans la zone 3x3
+                            unit.take_damage(self.dommage) # Dégâts infligés à/aux cible(s)
+                            print(f"{unit.team} unité à ({unit.x}, {unit.y}) perd {self.dommage} points de vie.")
+                            if unit.health <= 0: # Dans le cas où l'unité meurt
+                                game.enemy_units.remove(unit) # Suppression de l'unité
+                                print(f"{unit.team} unité à ({unit.x}, {unit.y}) a été éliminée.")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -117,15 +124,13 @@ class Bouclier(Competence): # Compétence défensive : personnel, effet persista
 
 class Paralysie(Competence): # Compétence passive : une seule cible, portée de 3 cases, durée = 1 tour
     def __init__(self):
-        super().__init__("Paralysie", portee = 3, duree = 1) # Portée de la compétence = 2, l'effet ne dure qu'un tour
-
+        super().__init__("Paralysie", portee = 300, duree = 2) # Portée de la compétence = 2, l'effet ne dure qu'un tour
+    
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee:  # Si la cible est à portée
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.appliquer_effet("immobilisé", duree=self.duree)  # Applique l'effet
+                cible.appliquer_effet("immobilisé", duree = 2)  # Applique l'effet
                 print(f"{cible.team} unité à ({cible.x}, {cible.y}) est paralysée pour {self.duree} tour(s)!")
-                if hasattr(cible, 'immobilise'):  # Empêche immédiatement de bouger
-                    cible.immobilise = True
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 print("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée

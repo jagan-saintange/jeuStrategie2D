@@ -109,13 +109,19 @@ class Game:
                             self.competences_utilisees.clear() # Vide l'ensemble des compétences utilisées pour les rendre toutes disponibles à nouveau (nouveau cycle)
                     has_acted = True # Indique que l'unité a effectué ses actions (déplacement + usage de compétence) pour ce tour
                     selected_unit.is_selected = False # Réinitialisation de l'état de l'unité, indiquant qu'elle n'est plus active
-
+        self.player_units = [unit for unit in self.player_units if unit.health > 0]
+        self.enemy_units = [unit for unit in self.enemy_units if unit.health > 0]
         self.check_game_over() # On vérifie si le jeu est terminé après que l'unité ait agi
 
     def handle_enemy_turn(self):
         """IA très simple pour les ennemis."""
         for enemy in self.enemy_units:
             enemy.mettre_a_jour_effets()
+            if enemy.is_effect_active("immobilisé"):
+                print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est paralysée et ne peut pas agir ce tour.")
+                continue  # Passe au prochain ennemi
+            if enemy.health <= 0:
+                continue  # Ignorer les unités mortes
             # Vérifie si l'ennemi est immobilisé (paralysie)
             if enemy.is_effect_active("immobilisé"):
                 print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est paralysée et ne peut pas agir ce tour.")
@@ -134,7 +140,9 @@ class Game:
                 enemy.attack(target)
                 if target.health <= 0:
                     self.player_units.remove(target)
+        self.enemy_units = [enemy for enemy in self.enemy_units if enemy.health > 0]
         self.check_game_over() # On s'assure que la condition de fin de jeu n'est pas remplie (victoire ou défaite)
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 # FONCTIONS RELATIVES AUX COMPÉTENCES:
@@ -178,7 +186,8 @@ class Game:
         if competence and utilisateur and cible: # Dans le cas où la compétence peut être utilisée
             competence.utiliser(utilisateur, cible, self) # On l'utilise
             if isinstance(cible, Unit) and cible.team == "enemy" and cible.health <= 0: # Dans le cas où la cible est une unité ennemie ET qu'elle n'a plus de PdV
-                self.enemy_units.remove(cible) # Suppression de la cible de la liste des ennemis
+                if cible in self.enemy_units:
+                    self.enemy_units.remove(cible) # Suppression de la cible de la liste des ennemis
         else: # Dans le cas où la cible est une unité alliée
             print("Impossible d'utiliser la compétence. Vérifiez l'utilisateur, la cible et la compétence.")
 
@@ -192,7 +201,13 @@ class Game:
             return utilisateur
         while True: # Boucle infinie jusqu'à ce que la cible (untié ou case du plateau) ait été sélectionnée
             self.flip_display() # Mise à jour de l'affichage
-            pygame.draw.rect(self.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Apparition du curseur (carré vert autour de la cellule)
+            if competence.nom == "Pluie de projectiles":
+                for dx in range(-1, 2):  # De -1 à 1 (pour une matrice 3x3)
+                    for dy in range(-1, 2):
+                        if 0 <= curseur_x + dx < GRID_SIZE and 0 <= curseur_y + dy < GRID_SIZE:
+                            pygame.draw.rect(self.screen, (128, 0, 128), ((curseur_x + dx) * CELL_SIZE, (curseur_y + dy) * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
+            else:
+                pygame.draw.rect(self.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Apparition du curseur (carré vert autour de la cellule)
             pygame.display.flip() # Affichage des évènements à l'écran
             for event in pygame.event.get(): # On parcourt tous les évènements Pygame
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
@@ -219,7 +234,7 @@ class Game:
         while True: # Boucle infinie (jusqu'à validation ou annulation) pour effectuer la sélection
             self.flip_display() # Mise à jour de l'affichage du jeu (grille, unités, etc.)
             # Dessin d'un carré vert pour indiquer la position actuelle du curseur
-            pygame.draw.rect(self.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Dessin d'un carré vert autour de la case sélectionnée pour indiquer la position du curseur
+            pygame.draw.rect(self.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Curseur (carré vert autour de la cellule)
             pygame.display.flip() # Mise à jour de l'écran pour afficher les modifications
             for event in pygame.event.get(): # On parcourt tous les événements utilisateur (clavier, souris, etc.)
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu

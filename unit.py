@@ -61,7 +61,7 @@ class Unit:
         if abs(self.x - target.x) + abs(self.y - target.y) <= 1:  # Vérifie si la cible est à portée
             target.take_damage(self.attack_power)
             print(f"{self.team} unité à ({self.x}, {self.y}) attaque {target.team} unité à ({target.x}, {target.y}) pour {self.attack_power} dégâts!")
-
+    
     def take_damage(self, damage):
         """
         Réduit la santé de l'unité après avoir subi des dégâts,
@@ -80,19 +80,25 @@ class Unit:
         """
         Applique un effet temporaire à l'unité (ex: poison, désarmement, bouclier).
         """
+        for existing_effet in self.effects:
+            if existing_effet["effet"] == effet.lower():
+                # Si l'effet est déjà actif, on met à jour sa durée et ses dommages
+                existing_effet["duree"] = max(existing_effet["duree"], duree)
+                existing_effet["dommages"] = max(existing_effet["dommages"], dommages)
+                print(f"{self.team} unité à ({self.x}, {self.y}) voit l'effet {effet} prolongé à {existing_effet['duree']} tours!")
+                return
+
+        # Si l'effet n'existe pas, on l'ajoute
         self.effects.append({"effet": effet.lower(), "duree": duree, "dommages": dommages})
+        print(f"Effet appliqué : {effet}, Durée : {duree}, Dommages : {dommages}, Unité : ({self.x}, {self.y}) - {self.team}")
         print(f"{self.team} unité à ({self.x}, {self.y}) est affectée par {effet} pour {duree} tours!")
 
     def mettre_a_jour_effets(self):
-        """
-        Met à jour les effets actifs sur l'unité, en réduisant leur durée.
-        Applique les dommages liés à des effets comme le poison et supprime les effets expirés.
-        """
         effets_restants = []
         for effet in self.effects:
             if effet["effet"] == "poison":
-                self.take_damage(effet["dommages"])  # Applique les dommages de poison
-
+                self.take_damage(effet["dommages"]) # Applique les dégâts de poison
+            print(f"Effet actif : {effet['effet']}, Durée restante : {effet['duree']}, Unité : ({self.x}, {self.y}) - {self.team}")
             effet["duree"] -= 1
             if effet["duree"] > 0:
                 effets_restants.append(effet)
@@ -105,7 +111,10 @@ class Unit:
         """
         Vérifie si un effet spécifique est actif sur l'unité.
         """
-        return any(effet["effet"] == effet_name for effet in self.effects)
+        for effet in self.effects:
+            if effet["effet"] == effet_name:
+                return True
+        return False
 
     def draw(self, screen):
         """
@@ -122,20 +131,3 @@ class Unit:
         health_ratio = self.health / self.max_health
         health_bar_color = (255 - int(255 * health_ratio), int(255 * health_ratio), 0)
         pygame.draw.rect(screen, health_bar_color, (self.x * CELL_SIZE + CELL_SIZE // 4, self.y * CELL_SIZE - 5, int(health_bar_width * health_ratio), 5))
-
-    # ----- COMPÉTENCES -----
-
-    def utiliser_bouclier(self):
-        """
-        Active un bouclier sur l'unité elle-même.
-        """
-        self.appliquer_effet("bouclier", duree=2)
-
-    def utiliser_desarmement(self, cible):
-        """
-        Désarme une unité ennemie si elle est à portée.
-        """
-        if abs(self.x - cible.x) + abs(self.y - cible.y) <= 3:
-            cible.appliquer_effet("désarmé", duree=1)
-        else:
-            print("Cible hors de portée pour Désarmement.")
