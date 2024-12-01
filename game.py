@@ -28,10 +28,10 @@ class Game:
             La surface de la fenêtre du jeu.
         """
         self.screen = screen
-        self.player_units = [Unit(0, 0, 100, 10, 'player'),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
-                             Unit(1, 0, 100, 10, 'player')]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
-        self.enemy_units = [Unit(6, 6, 100, 8, 'enemy'),        # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
-                            Unit(7, 6, 100, 8, 'enemy')]        # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
+        self.player_units = [Unit(0, 0, 29, 10, 'player'),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
+                             Unit(1, 0, 29, 10, 'player')]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
+        self.enemy_units = [Unit(6, 6, 29, 10, 'enemy'),        # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
+                            Unit(7, 6, 29, 10, 'enemy')]        # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
 
         # Initialisation des compétences
         self.competences = [Poison(),
@@ -46,7 +46,7 @@ class Game:
                             Teleportation()]
         # Attribution de chaque compétence à une touche du clavier (A, Z, E, R, T, Y, U, I, O, P)
         self.touches_competences = {"Poison": pygame.K_a,
-                                    "Pluie de Projectiles": pygame.K_z,
+                                    "Pluie de projectiles": pygame.K_z,
                                     "Missile": pygame.K_e,
                                     "Drain": pygame.K_r,
                                     "Soin": pygame.K_t,
@@ -61,6 +61,7 @@ class Game:
     def handle_player_turn(self):
         """Tour du joueur"""
         for selected_unit in self.player_units:
+            selected_unit.mettre_a_jour_effets()
             selected_unit.is_selected = True
             self.flip_display()
 
@@ -69,7 +70,6 @@ class Game:
             max_deplacements = 3
             while max_deplacements > 0:
                 self.flip_display()
-                print(f"Il vous reste {max_deplacements} déplacements.")
                 # Important: cette boucle permet de gérer les événements Pygame
                 for event in pygame.event.get():
                     # Gestion de la fermeture de la fenêtre
@@ -90,6 +90,7 @@ class Game:
                             dy = 1
                         selected_unit.move(dx, dy)
                         max_deplacements -= 1
+                        print(f"L'unité a été déplacée à ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
                         break
 
             # Étape 2 : Sélection et utilisation d'une compétence
@@ -114,11 +115,20 @@ class Game:
     def handle_enemy_turn(self):
         """IA très simple pour les ennemis."""
         for enemy in self.enemy_units:
+            enemy.mettre_a_jour_effets()
+            # Vérifie si l'ennemi est immobilisé (paralysie)
+            if enemy.is_effect_active("immobilisé"):
+                print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est paralysée et ne peut pas agir ce tour.")
+                continue  # Passe au prochain ennemi
             # Déplacement aléatoire
             target = random.choice(self.player_units)
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
             enemy.move(dx, dy)
+            # Vérifie si l'ennemi est désarmé (ne peut pas attaquer)
+            if enemy.is_effect_active("désarmé"):
+                print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est désarmée et ne peut pas attaquer.")
+                continue  # Passe au prochain ennemi
             # Attaque si possible
             if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                 enemy.attack(target)
@@ -157,7 +167,7 @@ class Game:
                 elif event.type == pygame.KEYDOWN: # Dans le cas où l'utilisateur presse une touche
                     competence = None # Variable dans laquelle on stockera la compétence sélectionnée parmi celles qui sont disponibles
                     for c in competences_disponibles: # On parcourt les compétences disponibles (celles affichées à l'écran)
-                        if event.key == self.touches_competences.get(c.nom):  # On s'assure que la touche pressée correspond à celle associée à la compétence
+                        if event.key == self.touches_competences.get(c.nom): # On s'assure que la touche pressée correspond à celle associée à la compétence
                             competence = c # Si une correspondance est vérifiée, alors cette compétence est attribuée à la variable "competence"
                             break # Aussitôt qu'une compétence valide a été trouvée, on sort de la boucle
                     if competence: # Dans le cas où une compétence valide est sélectionnée

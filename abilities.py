@@ -1,8 +1,12 @@
+from unit import *
+
 # Classe générale dont les autres sous-classes hériteront
 class Competence:
-    def __init__(self, nom, portee): # Initialisation d'une compétence (son nom, sa portée)
-        self.nom = nom
-        self.portee = portee
+    def __init__(self, nom, portee = 0, dommage = 0, duree = 0): # Initialisation d'une compétence
+        self.nom = nom # Nom de la compétence
+        self.portee = portee # Portée de la compétence
+        self.dommage = dommage # Dégâts infligés par la compétence s'il s'agit d'une attaque
+        self.duree = duree # Durée de la compétence
 
     def utiliser(self, utilisateur, cible, game): # Méthode abstraite à implémenter dans chaque sous-classe pour garantir la cohésion
         raise NotImplementedError("Cette méthode doit être implémentée dans les classes dérivées.")
@@ -11,15 +15,16 @@ class Competence:
 
 class Poison(Competence): # Compétence offensive : une seule cible, portée de 2 cases, effet persistant (-15 PdV par tour)
     def __init__(self): # Initialisation des attributs spécifiques
-        super().__init__("Poison", portee = 2) # Portée de l'attaque = 2
-        self.damage = 15 # Dégâts infligés à la cible par tour (-15 PdV)
-        self.duree = 2 # Durée de la compétence (s'étend sur 2 tours ici)
+        super().__init__("Poison", portee = 2, dommage = 15, duree = 2) # Portée de l'attaque = 2, dégâts infligés = -15 PdV, durée = 2 tours
 
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
-            cible.appliquer_effet("Empoisonné", duree = self.duree, dommages = self.damage) # Inflige -15 PdV de dégâts par tour à la cible
-            print(f"{cible.team} unité à ({cible.x}, {cible.y}) a été empoisonnée !"
-                  f"Elle subira {self.damage} PdV de dégâts pendant {self.duree} tour(s).")
+            if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
+                cible.take_damage(self.dommage) # Dégâts immédiats (-15 PdV)
+                print(f"{cible.team} unité à ({cible.x}, {cible.y}) a été empoisonnée ! Elle subira {self.dommage} PdV de dégâts pendant {self.duree} tour(s).")
+                cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
+            else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
+                print("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
             print(f"Hors de portée. Vous devez vous trouver dans un rayon de {self.portee} cases.")
 
@@ -27,36 +32,35 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
 
 class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles, portée de 2 cases, pas d'effet persistant (-40 PdV par cible présente dans le périmètre désigné)
     def __init__(self):
-        super().__init__("Pluie de Projectiles", portee = 2) # Portée de l'attaque = 2
-        self.dommages = 40 # Dégâts infligés aux cibles (-40 PdV/cible)
+        super().__init__("Pluie de projectiles", portee = 5, dommage = 40) # Portée de l'attaque = 5, dégâts infligés = -40 PdV/cible
 
     def utiliser(self, utilisateur, cible, game):
-        if utilisateur.health >= 40: # Si l'utilisateur a 40 PdV (ou plus)
-            print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) a trop de points de vie pour utiliser Pluie de Projectiles.")
-            return # Fin de l'exécution, car la condition de santé n'est pas remplie
-
-        cible_x, cible_y = cible # Décomposition des coordonnées de la cible en 2 variables : cible_x et cible_y
-        if abs(utilisateur.x - cible_x) > 1 or abs(utilisateur.y - cible_y) > 1: # Si la cible n'est pas à portée
+        if not isinstance(cible, Unit) or cible.team != "enemy": # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
+            print("Aucune cible sélectionnée.")
+            return
+        cible_x, cible_y = cible.x, cible.y # Décomposition des coordonnées de la cible en 2 variables distinctes : cible_x et cible_y
+        if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) > self.portee: # Si la cible n'est pas à portée
             print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) est trop loin pour lancer Pluie de Projectiles.")
             return # Fin de l'exécution
-
         print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) lance Pluie de Projectiles sur la zone centrée en ({cible_x}, {cible_y})!")
         for unit in game.enemy_units: # On parcourt toutes les unités ennemies présentes sur le plateau
             if abs(unit.x - cible_x) <= 1 and abs(unit.y - cible_y) <= 1: # On s'assure que l'unité ennemie se trouve dans la zone 3x3 autour de la case désignée
-                unit.take_damage(self.dommages) # Application des dégâts à l'unité ennemie
-                print(f"{unit.team} unité à ({unit.x}, {unit.y}) perd {self.dommages} points de vie à cause de Pluie de Projectiles!")
+                unit.take_damage(self.dommage) # Application des dégâts à l'unité ennemie
+                print(f"{unit.team} unité à ({unit.x}, {unit.y}) perd {self.dommage} points de vie à cause de Pluie de Projectiles!")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 class Missile(Competence): # Compétence offensive : une seule cible, portée de 10 cases, pas d'effet persistant (-15 PdV immédiat)
     def __init__(self):
-        super().__init__("Missile", portee = 10) # Portée de l'attaque = 10
-        self.damage = 15 # Dégâts infligés à la cible (-15 PdV)
+        super().__init__("Missile", portee = 10, dommage = 15) # Portée de l'attaque = 10, dégâts infligés = -15 PdV
 
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 10 cases autour de l'attaquant
-            cible.take_damage(self.damage) # Inflige -15 PdV de dégâts à la cible
-            print(f"Un missile vient de s'abattre sur ({cible.x}, {cible.y}) : -{self.damage} PdV.")
+            if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
+                cible.take_damage(self.dommage)  # Inflige -15 PdV de dégâts à la cible
+                print(f"Un missile vient de s'abattre sur ({cible.x}, {cible.y}) : -{self.dommage} PdV.")
+            else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
+                print("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
             print(f"Hors de portée. Vous devez vous trouver dans un rayon de {self.portee} cases.")
 
@@ -64,15 +68,17 @@ class Missile(Competence): # Compétence offensive : une seule cible, portée de
 
 class Drain(Competence): # Compétence offensive : une seule cible, portée de 5 cases, pas d'effet persistant (-10 PdV immédiat)
     def __init__(self):
-        super().__init__("Drain", portee = 5) # Portée de l'attaque = 5
-        self.dommages = 10 # Dégâts infligés à la cible (-10 PdV)
+        super().__init__("Drain", portee = 5, dommage = 10) # Portée de l'attaque = 5, dégâts infligés = -10 PdV
 
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
-            cible.take_damage(self.dommages) # Inflige -10 PdV à l'unité cible.
-            print(f"{cible.team} unité à ({cible.x}, {cible.y}) perd {self.dommages} points de vie à cause de Drain!")
-            utilisateur.health = min(utilisateur.max_health, utilisateur.health + self.dommages) # Régénère +10 PdV à l'unité attaquante.
-            print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) regagne {self.dommages} points de vie grâce à Drain!")
+            if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
+                cible.take_damage(self.dommage) # Inflige -10 PdV à l'unité cible.
+                print(f"{cible.team} unité à ({cible.x}, {cible.y}) perd {self.dommage} points de vie à cause de Drain!")
+                utilisateur.health = min(utilisateur.max_health, utilisateur.health + self.dommage) # Régénère +10 PdV à l'unité attaquante.
+                print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) regagne {self.dommage} points de vie grâce à Drain!")
+            else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
+                print("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
             print(f"Hors de portée. Vous devez vous trouver dans un rayon de {self.portee} cases.")
 
@@ -98,8 +104,7 @@ class Soin(Competence): # Compétence défensive : personnel, pas d'effet persis
 
 class Bouclier(Competence): # Compétence défensive : personnel, effet persistant pendant 2 tours
     def __init__(self):
-        super().__init__("Bouclier", portee = 0)  # Il s'agit d'une compétence personnelle (donc portée = 0)
-        self.duree = 2  # Durée du bouclier (en tours)
+        super().__init__("Bouclier", portee = 0, duree = 1)  # Il s'agit d'une compétence personnelle (donc portée = 0)
 
     def utiliser(self, utilisateur, cible, game):
         if cible is not utilisateur: # On s'assure que l'utilisateur utilise le bouclier sur lui-même
@@ -112,13 +117,17 @@ class Bouclier(Competence): # Compétence défensive : personnel, effet persista
 
 class Paralysie(Competence): # Compétence passive : une seule cible, portée de 3 cases, durée = 1 tour
     def __init__(self):
-        super().__init__("Paralysie", portee = 3) # Portée de la compétence = 2
-        self.duree = 1  # L'effet ne dure qu'un tour
+        super().__init__("Paralysie", portee = 3, duree = 1) # Portée de la compétence = 2, l'effet ne dure qu'un tour
 
     def utiliser(self, utilisateur, cible, game):
-        if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 3 cases autour de l'attaquant
-            cible.appliquer_effet("immobilisé", duree=self.duree) # Empêche la cible de bouger pendant un tour
-            print(f"{cible.team} unité à ({cible.x}, {cible.y}) est paralysée et ne peut pas se déplacer pour {self.duree} tour(s)!")
+        if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee:  # Si la cible est à portée
+            if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
+                cible.appliquer_effet("immobilisé", duree=self.duree)  # Applique l'effet
+                print(f"{cible.team} unité à ({cible.x}, {cible.y}) est paralysée pour {self.duree} tour(s)!")
+                if hasattr(cible, 'immobilise'):  # Empêche immédiatement de bouger
+                    cible.immobilise = True
+            else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
+                print("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
             print(f"Hors de portée. Vous devez vous trouver dans un rayon de {self.portee} cases.")
 
@@ -126,13 +135,15 @@ class Paralysie(Competence): # Compétence passive : une seule cible, portée de
 
 class Desarmement(Competence): # Compétence passive : une seule cible, portée de 10 cases, durée = 1 tour
     def __init__(self):
-        super().__init__("Désarmement", portee = 10) # Portée de la compétence = 10
-        self.duree = 1  # L'effet ne dure qu'un tour
+        super().__init__("Désarmement", portee = 10, duree = 1) # Portée de la compétence = 10, l'effet ne dure qu'un tour
 
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée (dans un rayon de 10 cases)
-            cible.appliquer_effet("désarmé", duree = self.duree) # On empêche l'unité cible d'attaquer pendant 1 tour en la désarmant
-            print(f"{cible.team} unité à ({cible.x}, {cible.y}) est désarmée et ne peut pas attaquer pendant {self.duree} tour(s)!")
+            if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
+                cible.appliquer_effet("désarmé", duree = self.duree) # On empêche l'unité cible d'attaquer pendant 1 tour en la désarmant
+                print(f"{cible.team} unité à ({cible.x}, {cible.y}) est désarmée et ne peut pas attaquer pendant {self.duree} tour(s)!")
+            else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
+                print("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
             print(f"Hors de portée. Vous devez vous trouver dans un rayon de {self.portee} cases.")
 
@@ -140,7 +151,7 @@ class Desarmement(Competence): # Compétence passive : une seule cible, portée 
 
 class Vortex(Competence): # Compétence passive : toutes les cibles ennemies, portée infinie
     def __init__(self):
-        super().__init__("Vortex", portee = float('inf'))  # Portée infinie
+        super().__init__("Vortex", portee = -1) # Portée vaut -1 pour indiquer qu'aucune limitation de portée n'est appliquée
 
     def utiliser(self, utilisateur, cible, game):
         if cible is None or not hasattr(cible, 'x') or not hasattr(cible, 'y'): # On s'assure qu'une case a bien été spécifiée

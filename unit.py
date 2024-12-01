@@ -42,6 +42,9 @@ class Unit:
         """
         Déplace l'unité de dx, dy si le déplacement est dans les limites de la grille.
         """
+        if self.is_effect_active("immobilisé"):  # Vérifie si l'unité est immobilisée
+            print(f"{self.team} unité à ({self.x}, {self.y}) est immobilisée et ne peut pas se déplacer.")
+            return  # Empêche le déplacement
         if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
             self.x += dx
             self.y += dy
@@ -77,7 +80,7 @@ class Unit:
         """
         Applique un effet temporaire à l'unité (ex: poison, désarmement, bouclier).
         """
-        self.effects.append({"effet": effet, "duree": duree, "dommages": dommages})
+        self.effects.append({"effet": effet.lower(), "duree": duree, "dommages": dommages})
         print(f"{self.team} unité à ({self.x}, {self.y}) est affectée par {effet} pour {duree} tours!")
 
     def mettre_a_jour_effets(self):
