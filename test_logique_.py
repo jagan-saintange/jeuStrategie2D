@@ -43,10 +43,10 @@ Biden = Personnage('Biden', 'USA', 'feu', 'vieux', 'président des états Unis')
 Obama = Personnage('Obama', 'USA', 'feu', 'noir', 'président des états Unis')
 Bush = Personnage('Bush (père et fils)', 'USA', 'feu', 'blancs', 'présidents des états Unis')
 
-Stop = Personnage('Stop', 'USA', 'feu', 'rond rouge, il est écrit "STOP" en gros dessus', 'est le panneau Stop')
-Danger = Personnage('Trump', 'USA', 'plante')
-tourner_a_droite = Personnage('Trump', 'USA', 'plante')
-aire_de_repos = Personnage('Trump', 'USA', 'plante')
+Stop = Personnage('Stop', 'Panneaux de signalisation', 'feu', 'rond rouge, il est écrit "STOP" en gros dessus', 'est le panneau Stop')
+Danger = Personnage('Danger', 'Panneaux de signalisation', 'plante')
+tourner_a_droite = Personnage('tourner_a_droite', 'Panneaux de signalisation', 'plante')
+aire_de_repos = Personnage('aire_de_repos', 'Panneaux de signalisation', 'plante')
 
 
  

@@ -140,7 +140,8 @@ class Unit():
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.HPloss(20, self) #du point de vue du target, il y a perte de pv
+            target.attack_critique_esquive(self)
+            #target.HPloss(30, self, crit, choix) #du point de vue du target, il y a perte de pv
 
     def draw(self, screen):
         """Affiche l'unité sur l'écran."""
@@ -152,9 +153,6 @@ class Unit():
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
     
     
-    #@abstractmethod #est différente pour chaque type d'unité
-    #def resistance
-    
     @staticmethod
     def ponderation(a, b): #plus ils sont faibles en niveau plus c'est la différence entre les stats qui va compter
         seuil = max(a,b)/2
@@ -163,10 +161,57 @@ class Unit():
             return 1.0
         return frac
     
-    def multiplicateur(self, other_unit):
-        vs_def = self.defense_power
-        vs_att = other_unit.attack_power
-        return Unit.ponderation(vs_def, vs_att)*0.5+1
+    @staticmethod
+    def D20():
+        commentaire = "" #va nous permettre d'identifier des catégories en plus de récup la valeur exacte pour des calculs
+        result = rd.randint(1, 20)
+        if result == 1:
+            commentaire = "échec critique" 
+        elif result <= 5:
+            commentaire = "échec important"
+        elif result <=9:
+            commentaire = "échec faible"
+        elif result <= 15:
+            commentaire = "réussite faible"
+        elif result <= 19:
+            commentaire = "réussite importante"
+        else:
+            commentaire = "réussite critique"
+        
+        return result, commentaire
+        
+
+    def choix_stat_comp(self, other_unit, choix_stats):
+        choix = choix_stats[:2]
+        facteur = choix_stats[-1]
+        if choix == [False, False]: #selfdéfense conte otherattaque   
+            vs_def = self.defense_power
+            vs_att = other_unit.attack_power
+            return vs_def, vs_att*facteur
+        elif choix ==  [True, False]: #selfagilité contre otherattaque
+            vs_agi = self.agility_power
+            vs_att = other_unit.attack_power
+            return vs_agi, vs_att*facteur
+        elif choix ==  [False, True]: #selfdéfense contre otheragilité
+            vs_def = self.defense_power
+            vs_agi = other_unit.agility_power
+            return vs_def, vs_agi*facteur
+        elif choix ==  [True, True]: #selfagilité contre otheragilité
+            vs_agi = self.agility_power
+            vs_agi_other = other_unit.agility_power
+            return vs_agi, vs_agi_other*facteur
+        else:
+            raise TypeError('choix_stat_comp')
+        
+    
+    
+    def multiplicateur(self, other_unit, crit, choix_stats):
+        if crit:
+            borne_multiplication = 1.5
+        else: 
+            borne_multiplication = 0.5
+        stats = self.choix_stat_comp(other_unit, choix_stats)
+        return Unit.ponderation(stats[0], stats[1])*borne_multiplication+1
 
 
     def additionneur(self, other, degats):
@@ -181,8 +226,8 @@ class Unit():
         return int(faiblesse + resistance)
     
     
-    def HPloss(self, degats_brut : int, other_unit):
-        multiplicateur = self.multiplicateur(other_unit)
+    def HPloss(self, degats_brut : int, other_unit, crit : bool, choix_stats = [False, False, 1]):
+        multiplicateur = self.multiplicateur(other_unit, crit, choix_stats)
         #print(multiplicateur)
         degats = int((multiplicateur * degats_brut))
         comparaison = self.additionneur(other_unit, degats)
@@ -215,16 +260,88 @@ class Unit():
             if other.perso.de_type == 'plante':
                 resistance = True
         elif self.perso.de_type == "eau":
-            print('je suis eau')
+            #print('je suis eau')
             if other.perso.de_type == 'feu':
                 resistance = True
         elif self.perso.de_type == "plante":
             if other.perso.de_type == 'eau':
                 resistance = True
         
-        print(faiblesse, resistance)
+        #print(faiblesse, resistance)
         return faiblesse, resistance
     
+
+    def attack_critique_esquive(self, target, choix_stats = [False, False, 1]):
+        print('===================================\n')    
+         
+        
+        crit = False #on active ou non une comparaison par la stat agilité au lieu de [défense, attaque] classique, le chiffre est le facteur de la stat de l'attaquant
+        #normalement est déjà set par défaut comme ça à l'appel de la fonction HPloss
+        resD20att = Unit.D20()
+        print(resD20att, 'est le res du jet de dé de l attaquant', self.perso.nom)
+        if resD20att[0]>6:
+            if "important" in resD20att[1]:
+                #•print(resD20att[1])
+                crit = True
+                print('coup critique !')
+                target.HPloss(30, self, crit, choix_stats)
+            elif "critique" in resD20att[1]:
+                resD20def = Unit.D20()
+                print(resD20def, 'est la TENTATIVE D ESQUIVE MIRACULEUSE de', self.perso.nom)
+                if resD20def[0] == 20:
+                    print("esquive miraculeuse !")
+                else:
+                    crit = True
+                    target.HPloss(30, self, crit, choix_stats)
+                    if target.health >0:
+                        crit = False
+                        choix_stats = [False, True, 1]
+                        target.HPloss(30, self, crit, choix_stats)
+                    print("réussite critique + attaque supp")
+            
+            else:
+                target.HPloss(30, self, crit, choix_stats)
+            #    raise TypeError('attack_critique_esquive, attaque error')
+                
+                
+        elif resD20att[0]<=6:
+            resD20def = Unit.D20()
+            print(resD20def, 'est le res du jet de dé du defenseur', target.perso.nom)
+            if resD20def[0]>6:
+                if ('important' in resD20att[1]) or ('important' in resD20def[1]):
+                    if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power):
+                       choix_stats = [False, True, 2]
+                    else : 
+                       choix_stats = [True, True, 2]
+                    self.HPloss(30, target, crit, choix_stats) #self redevient la cible de la perte de pv !
+            
+                elif "critique" in resD20def[1]:
+                    resD20att2 = Unit.D20()
+                    print(resD20att2, 'est l ULTIME jet de dé de l attaquant', self.perso.nom)
+                    if resD20att2[0] == 20:
+                        print("esquive miraculeuse !")
+                    else:
+                        if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power):
+                           choix_stats = [False, True, 2]
+                        else : 
+                           choix_stats = [True, True, 2]
+                        self.HPloss(30, target, crit, choix_stats) #self redevient la cible de la perte de pv !
+                        if self.health > 0:
+                            choix_stats = [False, True, 1]
+                            self.HPloss(30, target, crit, choix_stats)
+                            
+                #else:
+                #    raise TypeError('attack_critique_esquive, contre-attaque error')
+                else:
+                    #target.attack_critique_esquive(self, choix_stats = [False, False, 2])
+                    target.HPloss(30, self, crit, choix_stats)
+        else:
+            raise TypeError('attack_critique_esquive, logic error')
+        
+        print(self.health, target.health)
+        print('\nattaque terminée\n===================================\n')    
+            
+###############################################"""""
     
     #MODIF ATTRIBUTS
     @property
@@ -313,6 +430,27 @@ class Archer(Unit):
         
         
     def nature_effect(self, perso, attack_power, defense_power, agility_power, speed):
+        """
+
+        Parameters
+        ----------
+        perso : TYPE
+            DESCRIPTION.
+        attack_power : TYPE
+            DESCRIPTION.
+        defense_power : TYPE
+            DESCRIPTION.
+        agility_power : TYPE
+            DESCRIPTION.
+        speed : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        fixed_power : TYPE
+            DESCRIPTION.
+
+        """
         coeff_attack = nature_carac[perso.de_nature]['attack_power_coeff']
         coeff_defense = nature_carac[perso.de_nature]['defense_power_coeff']
         coeff_agility = nature_carac[perso.de_nature]['agility_power_coeff'] 
@@ -338,7 +476,7 @@ class Archer(Unit):
             print(value)
             if value<50:
                 value = 50
-            #raise TypeError("la vitesse d'un archer doit être entre 50 et 100")
+                #raise TypeError("la vitesse d'un archer doit être entre 50 et 100")
         self.__health = value
     
     
