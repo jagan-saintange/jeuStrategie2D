@@ -28,10 +28,10 @@ class Game:
             La surface de la fenêtre du jeu.
         """
         self.screen = screen
-        self.player_units = [Unit(0, 0, 29, 10, 'player'),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
-                             Unit(1, 0, 29, 10, 'player')]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
-        self.enemy_units = [Unit(6, 6, 29, 10, 'enemy'),        # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
-                            Unit(7, 6, 29, 10, 'enemy')]        # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
+        self.player_units = [Unit(0, 0, 16, 10, 'player'),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
+                             Unit(1, 0, 16, 10, 'player')]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
+        self.enemy_units = [Unit(6, 6, 16, 10, 'enemy'),        # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
+                            Unit(7, 6, 16, 10, 'enemy')]        # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
 
         # Initialisation des compétences
         self.competences = [Poison(),
@@ -194,20 +194,72 @@ class Game:
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 # FONCTIONS RELATIVES AU CURSEUR (SÉLÉCTION DE CIBLE ET/OU DE CASE):
 
-    # Fonction permettant à l'utilisateur de sélectionner une cible ou une position sur la grille
+    # Fonction permettant à l'utilisateur de sélectionner une cible sur la grille
     def selectionner_cible(self, utilisateur, competence):
         curseur_x, curseur_y = utilisateur.x, utilisateur.y # Coordonnées du curseur initialisées avec les coordonnées actuelles de l'utilisateur
         if competence.nom in ["Soin", "Bouclier", "Téléportation"]: # S'il s'agit des compétences "Bouclier", "Soin" ou "Téléportation", pas de sélection extérieure
             return utilisateur
-        while True: # Boucle infinie jusqu'à ce que la cible (untié ou case du plateau) ait été sélectionnée
+        if competence.nom == "Missile": # Dans le cas où l'utilisateur sélectionne la compétence "Missile"
+            direction = None # Direction choisie par le joueur
+            curseur_positions = [] # Liste des 5 cases correspondant au curseur
+            while True:
+                self.flip_display() # Mise à jour de l'affichage
+                if direction: # Dessin du curseur (ligne violette de 5 cases) orienté selon la direction choisie
+                    for pos in curseur_positions:
+                        x, y = pos
+                        pygame.draw.rect(self.screen, (128, 0, 128), (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
+                else:
+                    # Affiche un curseur vert initial si aucune direction n'a encore été choisie
+                    pygame.draw.rect(self.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
+
+                pygame.display.flip()  # Rafraîchit l'écran
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    elif event.type == pygame.KEYDOWN:
+                        # Mise à jour de la direction en fonction des touches fléchées
+                        if event.key == pygame.K_UP:
+                            direction = 'haut'
+                        elif event.key == pygame.K_DOWN:
+                            direction = 'bas'
+                        elif event.key == pygame.K_LEFT:
+                            direction = 'gauche'
+                        elif event.key == pygame.K_RIGHT:
+                            direction = 'droite'
+                        elif event.key == pygame.K_RETURN and direction:
+                            return direction  # Retourne la direction sélectionnée
+
+                        # Mise à jour des cases du curseur si une direction a été choisie
+                        if direction:
+                            curseur_positions = []
+                            dx, dy = 0, 0
+                            if direction == 'haut':
+                                dx, dy = 0, -1
+                            elif direction == 'bas':
+                                dx, dy = 0, 1
+                            elif direction == 'gauche':
+                                dx, dy = -1, 0
+                            elif direction == 'droite':
+                                dx, dy = 1, 0
+
+                            # Calcule les 5 cases dans la direction choisie
+                            for i in range(1, competence.portee + 1):
+                                new_x = utilisateur.x + dx * i
+                                new_y = utilisateur.y + dy * i
+                                if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE:  # Vérifie que les cases restent dans la grille
+                                    curseur_positions.append((new_x, new_y))
+        while True:
             self.flip_display() # Mise à jour de l'affichage
             if competence.nom == "Pluie de projectiles":
-                for dx in range(-1, 2):  # De -1 à 1 (pour une matrice 3x3)
+                for dx in range(-1, 2): # Affichage d'une matrice 3x3
                     for dy in range(-1, 2):
                         if 0 <= curseur_x + dx < GRID_SIZE and 0 <= curseur_y + dy < GRID_SIZE:
                             pygame.draw.rect(self.screen, (128, 0, 128), ((curseur_x + dx) * CELL_SIZE, (curseur_y + dy) * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2)
             else:
-                pygame.draw.rect(self.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Apparition du curseur (carré vert autour de la cellule)
+                pygame.draw.rect(self.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Curseur classique (case verte)
+            
             pygame.display.flip() # Affichage des évènements à l'écran
             for event in pygame.event.get(): # On parcourt tous les évènements Pygame
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu

@@ -1,15 +1,17 @@
+from abc import ABC, abstractmethod
 from unit import *
 
 # Classe générale dont les autres sous-classes hériteront
-class Competence:
+class Competence(ABC):
     def __init__(self, nom, portee = 0, dommage = 0, duree = 0): # Initialisation d'une compétence
         self.nom = nom # Nom de la compétence
         self.portee = portee # Portée de la compétence
         self.dommage = dommage # Dégâts infligés par la compétence s'il s'agit d'une attaque
         self.duree = duree # Durée de la compétence
 
+    @abstractmethod
     def utiliser(self, utilisateur, cible, game): # Méthode abstraite à implémenter dans chaque sous-classe pour garantir la cohésion
-        raise NotImplementedError("Cette méthode doit être implémentée dans les classes dérivées.")
+        raise NotImplementedError("Cette méthode doit être implémentée dans les sous-classes.")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -57,19 +59,36 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
-class Missile(Competence): # Compétence offensive : une seule cible, portée de 10 cases, pas d'effet persistant (-15 PdV immédiat)
+class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, portée de 10 cases, pas d'effet persistant (-15 PdV immédiat)
     def __init__(self):
-        super().__init__("Missile", portee = 10, dommage = 15) # Portée de l'attaque = 10, dégâts infligés = -15 PdV
+        super().__init__("Missile", portee = 5, dommage = 15) # Portée de l'attaque = 5, dégâts infligés = -15 PdV/cible
 
-    def utiliser(self, utilisateur, cible, game):
-        if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 10 cases autour de l'attaquant
-            if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.take_damage(self.dommage)  # Inflige -15 PdV de dégâts à la cible
-                print(f"Un missile vient de s'abattre sur ({cible.x}, {cible.y}) : -{self.dommage} PdV.")
-            else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
-                print("Aucune cible sélectionnée.")
-        else: # Si la cible est hors de portée
-            print(f"Hors de portée. Vous devez vous trouver dans un rayon de {self.portee} cases.")
+    def utiliser(self, utilisateur, direction, game):
+        if direction not in ['haut', 'bas', 'gauche', 'droite']: # On s'assure que la direction choisie est valide (4 directions possibles)
+            print("Direction invalide.")
+            return # Fin de l'exécution
+        
+        dx, dy = 0, 0 # Par défaut, aucune direction n'est choisie
+        if direction == 'haut': # Si l'utilisateur choisit la direction 'haut', le déplacement est vers le haut (dy = -1)
+            dx, dy = 0, -1
+        elif direction == 'bas': # Si l'utilisateur choisit la direction 'bas', le déplacement est vers le bas (dy = 1)
+            dx, dy = 0, 1
+        elif direction == 'gauche': # Si l'utilisateur choisit la direction 'gauche', le déplacement est vers la gauche (dx = -1)
+            dx, dy = -1, 0
+        elif direction == 'droite': # Si l'utilisateur choisit la direction 'droite', le déplacement est vers la gauche (dx = 1)
+            dx, dy = 1, 0
+
+        for i in range(1, self.portee + 1): # Parcourt des 5 cases du curseur (dans la direction choisie)
+            x = utilisateur.x + dx * i # Coordonnée X de la case actuelle (où dx est le déplacement horizontal (par exemple, -1 pour "gauche") et i est la distance de la case par rapport à l'utilisateur)
+            y = utilisateur.y + dy * i # Coordonnée Y de la case actuelle (où dx est le déplacement horizontal (par exemple, -1 pour "gauche") et i est la distance de la case par rapport à l'utilisateur)
+            if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE: # On s'assure que la case est dans les limites de la grille (pour éviter les débordements)
+                for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
+                    if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
+                        enemy.take_damage(self.dommage) # Dégâts infligés (-15 PdV / cible)
+                        print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) subit {self.dommage} PdV à cause de Missile !")
+                        if enemy.health <= 0: # Dans le cas où l'unité meurt
+                            game.enemy_units.remove(enemy) # Suppression de l'unité
+                            print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) a été éliminée !")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
