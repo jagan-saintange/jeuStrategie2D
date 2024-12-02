@@ -22,7 +22,7 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.take_damage(self.dommage) # Dégâts immédiats (-15 PdV)
+                cible.attack(dommage = self.dommage) # Dégâts immédiats (-15 PdV)
                 print(f"{cible.team} unité à ({cible.x}, {cible.y}) a été empoisonnée ! Elle subira {self.dommage} PdV de dégâts pendant {self.duree} tour(s).")
                 cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
@@ -37,21 +37,22 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
         super().__init__("Pluie de projectiles", portee = 5, dommage = 40) # Portée de l'attaque = 5, dégâts infligés = -40 PdV/cible
 
     def utiliser(self, utilisateur, cible, game):
-        if not isinstance(cible, Unit):  # Vérifie si une case a bien été sélectionnée
+        if not isinstance(cible, Unit): # On s'assure que la cible est bien une unité
             print("Aucune cible sélectionnée.")
-            return
+            return # Fin de l'exécution
         cible_x, cible_y = cible.x, cible.y # Décomposition des coordonnées de la cible en 2 variables distinctes : cible_x et cible_y
-        if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) > self.portee: # Si la cible n'est pas à portée
+        if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) > self.portee: # Calcul de la distance de Manhattan entre l'utilisateur et la cible
             print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) est trop loin pour lancer Pluie de Projectiles.")
             return # Fin de l'exécution
+
         print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) lance Pluie de Projectiles sur la zone centrée en ({cible_x}, {cible_y})!")
-        for dx in range(-1, 2): # Balayage de la zone d'attaque (matrice 3x3)
-            for dy in range(-1, 2):
-                zone_x, zone_y = cible_x + dx, cible_y + dy
-                if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE:
+        for dx in range(-1, 2): # Balayage horizontal dans une zone -1 à +1 (3 colonnes autour de la case désignée par l'utilisateur)
+            for dy in range(-1, 2): # Balayage vertical dans une zone -1 à +1 (3 ligneses autour de la case désignée par l'utilisateur)
+                zone_x, zone_y = cible_x + dx, cible_y + dy # Calcul des coordonnées des cases situés dans la matrice 3x3
+                if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for unit in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
-                        if abs(unit.x - cible_x) <= 1 and abs(unit.y - cible_y) <= 1: # Présence de l'unité dans la zone 3x3
-                            unit.take_damage(self.dommage) # Dégâts infligés à/aux cible(s)
+                        if abs(unit.x - cible_x) <= 1 and abs(unit.y - cible_y) <= 1: # Dans le cas où les untiés ennemies sont dans la zone 3x3
+                            unit.attack(cible = unit, dommage = self.dommage) # Dégâts infligés à/aux cible(s)
                             print(f"{unit.team} unité à ({unit.x}, {unit.y}) perd {self.dommage} points de vie.")
                             if unit.health <= 0: # Dans le cas où l'unité meurt
                                 game.enemy_units.remove(unit) # Suppression de l'unité
@@ -67,7 +68,6 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
         if direction not in ['haut', 'bas', 'gauche', 'droite']: # On s'assure que la direction choisie est valide (4 directions possibles)
             print("Direction invalide.")
             return # Fin de l'exécution
-        
         dx, dy = 0, 0 # Par défaut, aucune direction n'est choisie
         if direction == 'haut': # Si l'utilisateur choisit la direction 'haut', le déplacement est vers le haut (dy = -1)
             dx, dy = 0, -1
@@ -77,14 +77,13 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
             dx, dy = -1, 0
         elif direction == 'droite': # Si l'utilisateur choisit la direction 'droite', le déplacement est vers la gauche (dx = 1)
             dx, dy = 1, 0
-
         for i in range(1, self.portee + 1): # Parcourt des 5 cases du curseur (dans la direction choisie)
             x = utilisateur.x + dx * i # Coordonnée X de la case actuelle (où dx est le déplacement horizontal (par exemple, -1 pour "gauche") et i est la distance de la case par rapport à l'utilisateur)
             y = utilisateur.y + dy * i # Coordonnée Y de la case actuelle (où dx est le déplacement horizontal (par exemple, -1 pour "gauche") et i est la distance de la case par rapport à l'utilisateur)
             if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE: # On s'assure que la case est dans les limites de la grille (pour éviter les débordements)
                 for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
-                        enemy.take_damage(self.dommage) # Dégâts infligés (-15 PdV / cible)
+                        enemy.attack(dommage = self.dommage) # Dégâts infligés (-15 PdV / cible)
                         print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) subit {self.dommage} PdV à cause de Missile !")
                         if enemy.health <= 0: # Dans le cas où l'unité meurt
                             game.enemy_units.remove(enemy) # Suppression de l'unité
@@ -99,7 +98,7 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
     def utiliser(self, utilisateur, cible, game):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.take_damage(self.dommage) # Inflige -10 PdV à l'unité cible.
+                cible.attack(dommage = self.dommage) # Inflige -10 PdV à l'unité cible.
                 print(f"{cible.team} unité à ({cible.x}, {cible.y}) perd {self.dommage} points de vie à cause de Drain!")
                 utilisateur.health = min(utilisateur.max_health, utilisateur.health + self.dommage) # Régénère +10 PdV à l'unité attaquante.
                 print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) regagne {self.dommage} points de vie grâce à Drain!")
@@ -112,7 +111,7 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
 
 class Soin(Competence): # Compétence défensive : personnel, pas d'effet persistant (+10 PdV immédiat)
     def __init__(self):
-        super().__init__("Soin", portee = 0)  # Il s'agit d'une compétence personnelle (donc portée = 0)
+        super().__init__("Soin", portee = 0) # Il s'agit d'une compétence personnelle (donc portée = 0)
         self.PdV = 10  # Nombre de points de vie récupérés par l'utilisateur
 
     def utiliser(self, utilisateur, cible, game):
@@ -130,7 +129,7 @@ class Soin(Competence): # Compétence défensive : personnel, pas d'effet persis
 
 class Bouclier(Competence): # Compétence défensive : personnel, effet persistant pendant 2 tours
     def __init__(self):
-        super().__init__("Bouclier", portee = 0, duree = 1)  # Il s'agit d'une compétence personnelle (donc portée = 0)
+        super().__init__("Bouclier", portee = 0, duree = 1) # Il s'agit d'une compétence personnelle (donc portée = 0)
 
     def utiliser(self, utilisateur, cible, game):
         if cible is not utilisateur: # On s'assure que l'utilisateur utilise le bouclier sur lui-même
@@ -194,10 +193,10 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
 
     def utiliser(self, utilisateur, cible, game): # "Cible" n'est pas utilisé ici, car la téléportation est personnelle
         print(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) prépare une Téléportation!")
-        nouvelle_position = game.selectionner_case() # Méthode du jeu qui permet au joueur de choisir une nouvelle position
+        nouvelle_position = game.selectionner_cible(utilisateur) # Méthode du jeu qui permet au joueur de choisir une nouvelle position
 
         if nouvelle_position: # Si une nouvelle position est sélectionnée
-            utilisateur.x, utilisateur.y = nouvelle_position # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
+            utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
             print(f"{utilisateur.team} unité téléportée à ({utilisateur.x}, {utilisateur.y})!")
         else: # Si aucune nouvelle position n'est sélectionnée
             print("Téléportation annulée.")
