@@ -51,8 +51,8 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
                 zone_x, zone_y = cible_x + dx, cible_y + dy # Calcul des coordonnées des cases situés dans la matrice 3x3
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for unit in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
-                        if abs(unit.x - cible_x) <= 1 and abs(unit.y - cible_y) <= 1: # Dans le cas où les untiés ennemies sont dans la zone 3x3
-                            unit.attack(cible = unit, dommage = self.dommage) # Dégâts infligés à/aux cible(s)
+                        if unit.x == zone_x and unit.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
+                            unit.attack(dommage = self.dommage) # Dégâts infligés à/aux cible(s)
                             print(f"{unit.team} unité à ({unit.x}, {unit.y}) perd {self.dommage} points de vie.")
                             if unit.health <= 0: # Dans le cas où l'unité meurt
                                 game.enemy_units.remove(unit) # Suppression de l'unité

@@ -44,16 +44,16 @@ class Unit:
                 return # Empêche l'attaque
             if abs(self.x - cible.x) + abs(self.y - cible.y) <= 1: # Dans le cas où la cible est à portée
                 print(f"{self.team} unité à ({self.x}, {self.y}) attaque {cible.team} unité à ({cible.x}, {cible.y}) pour {self.attack_power} dégâts.")
-                cible.attack(dommage=self.attack_power)  # Inflige des dégâts à la cible
+                cible.health -= self.attack_power # Inflige des dégâts à la cible
         elif dommage is not None: # Si des dégâts directs sont appliqués
             if any(effet["effet"] == "bouclier" for effet in self.effects): # Dans le cas où un bouclier est actif
                 print(f"{self.team} unité à ({self.x}, {self.y}) est protégée par un bouclier, aucun dégât reçu.")
                 return # Absorption des dégâts par le bouclier
             self.health -= dommage # Dégâts infligés à l'unité
             print(f"{self.team} unité à ({self.x}, {self.y}) subit {dommage} dégâts.")
-            if self.health <= 0: # Dans le cas où l'unité meurt
-                self.health = 0
-                print(f"{self.team} unité à ({self.x}, {self.y}) est morte!")
+        if self.health <= 0: # Dans le cas où l'unité meurt
+            self.health = 0
+            print(f"{self.team} unité à ({self.x}, {self.y}) est morte!")
 
     def appliquer_effet(self, effet, duree, dommages=0):
         for existing_effet in self.effects:
