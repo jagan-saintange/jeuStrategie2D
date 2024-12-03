@@ -2,6 +2,8 @@
 import pygame
 import random as rd
 from abc import ABC, abstractmethod
+from personnages import *
+
 
 # Constantes
 GRID_SIZE = 8
@@ -15,64 +17,7 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
-#liste nature possible
-nature = ['timide', 'cool', 'engagé']#, 'passioné', 'ingénieux', 'flamboyant', 'délétère', 'morbide', 'cacophonique', 'puissant', 'aimant', 'voltigeur', 'dépressif', 'désespéré', 'optimiste', 'calme', 'tenace', 'démoniaque', 'divin']
 
-#dictionnaire de dictionnaires contenant les propriétés supp de  des natures
-nature_carac = {None : {'attack_power_coeff' : 0., 'defense_power_coeff' : 0.,'agility_power_coeff' : 0., 'speed_coeff' : 0.},
-        'timide' : {'attack_power_coeff' : -0.1, 'defense_power_coeff' : 0.1,'agility_power_coeff' : -0.1, 'speed_coeff' : 0.4},
-        'cool' : {'attack_power_coeff' : 0.2, 'defense_power_coeff' : -0.1,'agility_power_coeff' : 0.1, 'speed_coeff' : 0.2},
-        'engagé' : {'attack_power_coeff' : 0.3, 'defense_power_coeff' : -0.2, 'agility_power_coeff' : 0.2, 'speed_coeff' : 0.1},
-        }
-
-
-class Personnage: #if perso.univers = le selected alors on passe toutes les unités en player1
-    def __init__(self, nom, univers, de_type, description=None, biographie=None):
-        self.nom = nom #est un attribut public
-        self.univers = univers #est un attribut privé non accessible par convention A RECTIFIER
-        self.de_type = de_type #est un attribut privé avec getter et setter
-        self.de_nature = None
-        self.__nature_chooser() #générer la nature de ce personnage pour cette partie
-        self.description = description #attribut public
-        self.biographie = biographie #attribut public
-    
-
-          
-    
-    @property
-    def de_type(self):
-        return self.__de_type
-    
-       
-    @property
-    def de_nature(self):
-        return self.__de_nature
-    
-        
-    @de_type.setter
-    def de_type(self, value):
-        if value not in ('feu','eau','plante'):
-            print(value)
-            raise TypeError("le type doit être 'feu', 'eau' ou 'plante'")
-        self.__de_type = value
-     
-    
-    @de_nature.setter
-    def de_nature(self, value):
-        self.__de_nature = value
-        #print(f'set nature est {self.__de_nature}')
-    
-    
-    def __nature_chooser(self): #est une méthode privée
-        de_nature = nature[rd.randint(0, len(nature)-1)]
-        self.de_nature = de_nature #est un attribut privé
-        #print(self.de_nature)
-
-    @abstractmethod #will be defined in heritage class, mais j'implémente déjà ici car c'est ici qu'on définit la nature et c'est dans les héritiers de Unit qu'on assigne des stats 
-    #aussi in case of developpement futur d'effets différents pour les conséquences de la nature en fonction des classes
-    def nature_effect(self):
-        pass
-    
 
 class Unit():
     """
@@ -130,18 +75,33 @@ class Unit():
         self.team = str(team)  # 'player' ou 'enemy'
         #print(f'{self} est self.team)
         self.is_selected = False
+        
 
     def move(self, dx, dy):
-        """Déplace l'unité de dx, dy."""
+        """
         if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
             self.x += dx
             self.y += dy
+            #print(dx, dy)
+        """
+        #print('déplacement déctecté') 
+        if self.current_move < self.nombre_deplacements:
+            if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
+                self.x += dx
+                self.y += dy
+                self.current_move += 1
+                #print(self.current_move)
+                #print(f'il vous reste {self.nombre_deplacements - self.current_move}')
+        else:
+            #print('impossible, il ne vous reste plus de moves')
+            pass  
 
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
             target.attack_critique_esquive(self)
             #target.HPloss(30, self, crit, choix) #du point de vue du target, il y a perte de pv
+            print('attack done')
 
     def draw(self, screen):
         """Affiche l'unité sur l'écran."""
@@ -151,6 +111,14 @@ class Unit():
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
         pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+        
+        
+    def estim_nb_deplacements(self):
+        nombre_deplacements = 1 
+        nombre_deplacements += self.speed//20
+        self.nombre_deplacements = nombre_deplacements #on laisse public pour l'instant
+        self.current_move = 0 #on le crée que quand le nombre de déplacement est créé
+        
     
     
     @staticmethod
@@ -223,7 +191,7 @@ class Unit():
         if comp[1]:
             resistance += -(degats/2) 
             print('la résistance est appliquée')
-        return int(faiblesse + resistance)
+        return round(faiblesse + resistance)
     
     
     def HPloss(self, degats_brut : int, other_unit, crit : bool, choix_stats = [False, False, 1]):
@@ -408,12 +376,14 @@ class Inventaire:
         self.objets={}
         
     def add(self, item):
-        self.objets.add(item)
+        self.objets[item.name] = item
         
-    def use_item(self, item):
-        self.objets.pop(item)
+    def use_item(self, item_name):
+        if item_name in self.objets:
+            item = self.objets.pop(item_name)
         #mettre une série de if pour gérer les effets des items
-    
+        else: #on sait jamais on met ça temporairement
+            print(f"L'objet {item_name} n'est pas dans l'inventaire.")
 
 class Archer(Unit):
     """
@@ -427,6 +397,7 @@ class Archer(Unit):
         self.defense_power = fixed_power['defense_power']
         self.agility_power = fixed_power['agility_power']
         self.speed = fixed_power['speed']
+        self.estim_nb_deplacements()
         
         
     def nature_effect(self, perso, attack_power, defense_power, agility_power, speed):
@@ -456,16 +427,16 @@ class Archer(Unit):
         coeff_agility = nature_carac[perso.de_nature]['agility_power_coeff'] 
         coeff_speed = nature_carac[perso.de_nature]['speed_coeff']   
         fixed_power = {}
-        fixed_power['attack_power'] = int(coeff_attack * attack_power + attack_power)
-        fixed_power['defense_power'] = int(coeff_defense * defense_power + defense_power)
-        fixed_power['agility_power'] = int(coeff_agility * agility_power + agility_power)
-        fixed_power['speed'] = int(coeff_speed * speed + speed)
+        fixed_power['attack_power'] = round(coeff_attack * attack_power + attack_power)
+        fixed_power['defense_power'] = round(coeff_defense * defense_power + defense_power)
+        fixed_power['agility_power'] = round(coeff_agility * agility_power + agility_power)
+        fixed_power['speed'] = round(coeff_speed * speed + speed)
         
         return fixed_power
 
     @property
     def speed(self):
-        return self.__x 
+        return self.__speed
     
     @speed.setter
     def speed(self, value):
@@ -473,11 +444,14 @@ class Archer(Unit):
             print(value)
             raise TypeError("l'argument doit etre un int")
         if not 50<=value:
-            print(value)
+            #print(value)
             if value<50:
+                print(value, "speed value changed to ", end='')
                 value = 50
+                print(value)
                 #raise TypeError("la vitesse d'un archer doit être entre 50 et 100")
-        self.__health = value
+        self.__speed = value
+        
     
     
 class Aerien(Unit):
@@ -492,6 +466,7 @@ class Aerien(Unit):
         self.defense_power = fixed_power['defense_power']
         self.agility_power = fixed_power['agility_power']
         self.speed = fixed_power['speed']
+        self.estim_nb_deplacements()
         
         
     def nature_effect(self, perso, attack_power, defense_power, agility_power, speed):
@@ -500,16 +475,16 @@ class Aerien(Unit):
         coeff_agility = nature_carac[perso.de_nature]['agility_power_coeff'] 
         coeff_speed = nature_carac[perso.de_nature]['speed_coeff']   
         fixed_power = {}
-        fixed_power['attack_power'] = int(coeff_attack * attack_power + attack_power)
-        fixed_power['defense_power'] = int(coeff_defense * defense_power + defense_power)
-        fixed_power['agility_power'] = int(coeff_agility * agility_power + agility_power)
-        fixed_power['speed'] = int(coeff_speed * speed + speed)
+        fixed_power['attack_power'] = round(coeff_attack * attack_power + attack_power)
+        fixed_power['defense_power'] = round(coeff_defense * defense_power + defense_power)
+        fixed_power['agility_power'] = round(coeff_agility * agility_power + agility_power)
+        fixed_power['speed'] = round(coeff_speed * speed + speed)
         
         return fixed_power
     
     @property
     def speed(self):
-        return self.__x 
+        return self.__speed 
     
     @speed.setter
     def speed(self, value):
@@ -517,12 +492,14 @@ class Aerien(Unit):
             print(value)
             raise TypeError("l'argument doit etre un int")
         if not 50<=value:
-            print(value)
+            print(value, "speed value changed to ", end='')
             if value<50:
                 value = 50
+                print(value)
+                
             #else:
             #    raise TypeError("la vitesse d'un aerien doit être entre 50 et 100")
-        self.__health = value
+        self.__speed = value
         
 class Terrien(Unit):
     """
@@ -536,7 +513,8 @@ class Terrien(Unit):
         self.defense_power = fixed_power['defense_power']
         self.agility_power = fixed_power['agility_power']
         self.speed = fixed_power['speed']
-        #self.luck = random.randint(a, b) #peut etre rendre agility aléatoire mais bornée un fonction des genres d'unités, à voir
+        #print(self.attack_power)
+        self.estim_nb_deplacements()
         
     def nature_effect(self, perso, attack_power, defense_power, agility_power, speed):
         coeff_attack = nature_carac[perso.de_nature]['attack_power_coeff']
@@ -544,10 +522,10 @@ class Terrien(Unit):
         coeff_agility = nature_carac[perso.de_nature]['agility_power_coeff'] 
         coeff_speed = nature_carac[perso.de_nature]['speed_coeff']   
         fixed_power = {}
-        fixed_power['attack_power'] = int(coeff_attack * attack_power + attack_power)
-        fixed_power['defense_power'] = int(coeff_defense * defense_power + defense_power)
-        fixed_power['agility_power'] = int(coeff_agility * agility_power + agility_power)
-        fixed_power['speed'] = int(coeff_speed * speed + speed)
+        fixed_power['attack_power'] = round(coeff_attack * attack_power + attack_power)
+        fixed_power['defense_power'] = round(coeff_defense * defense_power + defense_power)
+        fixed_power['agility_power'] = round(coeff_agility * agility_power + agility_power)
+        fixed_power['speed'] = round(coeff_speed * speed + speed)
         
         return fixed_power
         
@@ -567,7 +545,7 @@ class Terrien(Unit):
 
     @property
     def speed(self):
-        return self.__x 
+        return self.__speed
     
     @speed.setter
     def speed(self, value):
@@ -575,11 +553,47 @@ class Terrien(Unit):
             print(value)
             raise TypeError("l'argument doit etre un int")
         if not 10<=value<=60:
-            print(value)
+            print(value, "speed value changed to ", end='')
             if value>60:
                 value = 60
             else:
                 value = 10
+            print(value)
             #raise TypeError("la vitesse d'un terrien doit être entre 10 et 60")
-        self.__health = value
+        self.__speed = value
 
+
+############################################
+############################################
+
+fighter_freddy = Terrien(perso=Freddy, x=2, y=2, health=120, team='FNAF', attack_power=7, defense_power=5, agility_power=2, speed=30)
+fighter_chica = Aerien(perso=Chica, x=2, y=3, health=100, team='FNAF', attack_power=5, defense_power=4, agility_power=3, speed=70)
+fighter_bonnie = Terrien(perso=Bonnie, x=3, y=2, health=110, team='FNAF', attack_power=6, defense_power=5, agility_power=2, speed=40)
+fighter_foxy = Aerien(perso=Foxy, x=3, y=3, health=95, team='FNAF', attack_power=4, defense_power=3, agility_power=5, speed=80)
+
+fighter_eren = Terrien(perso=Eren, x=4, y=4, health=120, team='SNK', attack_power=8, defense_power=6, agility_power=3, speed=50)
+fighter_armin = Archer(perso=Armin, x=4, y=5, health=90, team='SNK', attack_power=3, defense_power=4, agility_power=5, speed=75)
+fighter_mikasa = Aerien(perso=Mikasa, x=5, y=4, health=110, team='SNK', attack_power=7, defense_power=5, agility_power=4, speed=60)
+fighter_levi = Aerien(perso=Levi, x=5, y=5, health=95, team='SNK', attack_power=6, defense_power=4, agility_power=5, speed=85)
+
+fighter_dre = Terrien(perso=Dre, x=6, y=6, health=100, team='WestCoast', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_eminem = Archer(perso=Eminem, x=6, y=7, health=90, team='WestCoast', attack_power=6, defense_power=3, agility_power=4, speed=60)
+fighter_fifty = Terrien(perso=Fifty, x=7, y=6, health=100, team='WestCoast', attack_power=4, defense_power=5, agility_power=2, speed=40)
+fighter_snoop = Aerien(perso=Snoop, x=7, y=7, health=95, team='WestCoast', attack_power=3, defense_power=4, agility_power=5, speed=70)
+
+fighter_nietzsche = Terrien(perso=Nietzsche, x=8, y=8, health=100, team='philosophe', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_marx = Terrien(perso=Marx, x=8, y=9, health=110, team='philosophe', attack_power=6, defense_power=5, agility_power=2, speed=45)
+fighter_camus = Archer(perso=Camus, x=9, y=8, health=95, team='philosophe', attack_power=4, defense_power=3, agility_power=4, speed=60)
+fighter_socrates = Terrien(perso=Socrates, x=9, y=9, health=105, team='philosophe', attack_power=5, defense_power=5, agility_power=3, speed=50)
+
+fighter_trump = Aerien(perso=Trump, x=9, y=9, health=110, team='USA', attack_power=7, defense_power=5, agility_power=2, speed=50)
+fighter_biden = Aerien(perso=Biden, x=10, y=9, health=100, team='USA', attack_power=5, defense_power=4, agility_power=3, speed=45)
+fighter_obama = Aerien(perso=Obama, x=10, y=10, health=105, team='USA', attack_power=6, defense_power=5, agility_power=3, speed=50)
+fighter_bush = Aerien(perso=Bush, x=11, y=9, health=100, team='USA', attack_power=5, defense_power=4, agility_power=2, speed=40)
+
+fighter_stop = Terrien(perso=Stop, x=12, y=12, health=150, team='Panneaux de signalisation', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
+fighter_danger = Terrien(perso=Danger, x=12, y=13, health=100, team='Panneaux de signalisation', attack_power=3, defense_power=4, agility_power=2, speed=30)
+fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=13, y=12, health=100, team='Panneaux de signalisation', attack_power=2, defense_power=3, agility_power=3, speed=30)
+fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=13, y=13, health=100, team='Panneaux de signalisation', attack_power=1, defense_power=2, agility_power=2, speed=20)
+
+    

@@ -1,6 +1,9 @@
 import pygame
 import random
 
+
+from grid import grid, draw_grid
+
 from unit_ import *
 
 
@@ -55,53 +58,60 @@ class Game:
         """
         #Tour du joueur
         """
-        for selected_unit in self.player_units:
-
-            # Tant que l'unité n'a pas terminé son tour
-            has_acted = False
-            selected_unit.is_selected = True
-            self.flip_display()
-            while not has_acted:
-
-                # Important: cette boucle permet de gérer les événements Pygame
-                for event in pygame.event.get():
-
-                    # Gestion de la fermeture de la fenêtre
-                    if event.type == pygame.QUIT:
-                        pygame.quit()
-                        exit()
-
-                    # Gestion des touches du clavier
-                    if event.type == pygame.KEYDOWN:
-
-                        # Déplacement (touches fléchées)
-                        dx, dy = 0, 0
-                        if event.key == pygame.K_LEFT:
-                            dx = -1
-                        elif event.key == pygame.K_RIGHT:
-                            dx = 1
-                        elif event.key == pygame.K_UP:
-                            dy = -1
-                        elif event.key == pygame.K_DOWN:
-                            dy = 1
-                        elif event.type == pygame.K_ESCAPE:
+        if len(self.player_units)!=0:
+            for selected_unit in self.player_units:
+    
+                # Tant que l'unité n'a pas terminé son tour
+                has_acted = False
+                selected_unit.is_selected = True
+                self.flip_display()
+                while not has_acted:
+    
+                    # Important: cette boucle permet de gérer les événements Pygame
+                    for event in pygame.event.get():
+    
+                        # Gestion de la fermeture de la fenêtre
+                        if event.type == pygame.QUIT:
                             pygame.quit()
                             exit()
-
-                        selected_unit.move(dx, dy)
-                        self.flip_display()
-
-                        # Attaque (touche espace) met fin au tour
-                        if event.key == pygame.K_SPACE:
-                            for enemy in self.enemy_units:
-                                if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
-                                    selected_unit.attack(enemy)
-                                    if enemy.health <= 0:
-                                        self.enemy_units.remove(enemy)
-                                        print('A ETE REMOVED')
-
-                            has_acted = True
-                            selected_unit.is_selected = False
+    
+                        # Gestion des touches du clavier
+                        if event.type == pygame.KEYDOWN:
+    
+                            # Déplacement (touches fléchées)
+                            dx, dy = 0, 0
+                            if event.key == pygame.K_LEFT:
+                                dx = -1
+                            elif event.key == pygame.K_RIGHT:
+                                dx = 1
+                            elif event.key == pygame.K_UP:
+                                dy = -1
+                            elif event.key == pygame.K_DOWN:
+                                dy = 1
+                            elif event.type == pygame.K_ESCAPE:
+                                pygame.quit()
+                                exit()
+    
+                            selected_unit.move(dx, dy)
+                            self.flip_display()
+    
+                            # Attaque (touche espace) met fin au tour
+                            if event.key == pygame.K_SPACE:
+                                for enemy in self.enemy_units:
+                                    if abs(selected_unit.x - enemy.x) <= 1 and abs(selected_unit.y - enemy.y) <= 1:
+                                        selected_unit.attack(enemy)
+                                        for enemies in self.enemy_units:
+                                            if enemies.health <= 0:
+                                                self.enemy_units.remove(enemies)
+                                                #print('ENEMIES A ETE REMOVED')
+                                        for units in self.player_units:
+                                            if units.health <= 0:
+                                                self.player_units.remove(units)
+                                                #print('UNITS A ETE REMOVED')
+                                
+                                self.flip_display()
+                                has_acted = True
+                                selected_unit.is_selected = False
                             
                             
                             
@@ -110,31 +120,35 @@ class Game:
         """
         #IA très simple pour les ennemis.
         """
-        for enemy in self.enemy_units:
+        if len(self.enemy_units)!=0:
+            for enemy in self.enemy_units:
+    
+                # Déplacement aléatoire
+                target = random.choice(self.player_units)
+                dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
+                dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+                enemy.move(dx, dy)
+    
+                # Attaque si possible
+                if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
+                    enemy.attack(target)
+                    for enemies in self.enemy_units:
+                        if enemies.health <= 0:
+                            self.enemy_units.remove(enemies)
+                            print('ENEMIES A ETE REMOVED')
+                    for units in self.player_units:
+                        if units.health <= 0:
+                            self.player_units.remove(units)
+                            print('UNITS A ETE REMOVED')
+                self.flip_display()
 
-            # Déplacement aléatoire
-            target = random.choice(self.player_units)
-            dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-            dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-            enemy.move(dx, dy)
-
-            # Attaque si possible
-            if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
-                enemy.attack(target)
-                if target.health <= 0:
-                    self.player_units.remove(target)
 
     def flip_display(self):
         """
         #Affiche le jeu.
         """
 
-        # Affiche la grille
-        self.screen.fill(BLACK)
-        for x in range(0, WIDTH, CELL_SIZE):
-            for y in range(0, HEIGHT, CELL_SIZE):
-                rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
-                pygame.draw.rect(self.screen, WHITE, rect, 1)
+
 
         # Affiche les unités
         for unit in self.player_units + self.enemy_units:
@@ -144,23 +158,46 @@ class Game:
         pygame.display.flip()
 
 
+
+
+# Taille de la grille et de la fenêtre
+GRID_SIZE = 10  # Agrandissement de la grille à 20x20
+CELL_SIZE = 60  # Diminuer la taille des cases pour s'adapter à une plus grande grille
+WIDTH = GRID_SIZE * CELL_SIZE  # Calculer la largeur de la fenêtre
+HEIGHT = GRID_SIZE * CELL_SIZE  # Calculer la hauteur de la fenêtre
+
+def initialize_window():
+    pygame.init()  # Initialise Pygame
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))  # Crée la fenêtre
+    pygame.display.set_caption("Mon jeu de stratégie")  # Titre de la fenêtre
+    return screen
+
 def main():
+    screen = initialize_window()
+    clock = pygame.time.Clock()
 
-    # Initialisation de Pygame
-    pygame.init()
+    game_grid = grid()  # Génère la grille 20x20
 
-    # Instanciation de la fenêtre
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Mon jeu de stratégie")
+    running = True
+    while running:
+        for event in pygame.event.get():  # Gestion des événements
+            if event.type == pygame.QUIT:
+                running = False
 
-    # Instanciation du jeu
-    game = Game(screen)
+        screen.fill((255, 255, 255))  # Remplir l'écran en blanc
+        draw_grid(screen, game_grid, CELL_SIZE)  # Dessiner la grille
+        pygame.display.flip()  # Rafraîchir l'affichage
+        clock.tick(30)  # Limiter le framerate à 30 FPS
+        
+        
+        game = Game(screen)
 
-    # Boucle principale du jeu
-    while True:
         game.handle_player_turn()
         game.handle_enemy_turn()
 
+
+    pygame.quit()
+    sys.exit()
 
 if __name__ == "__main__":
     main()
