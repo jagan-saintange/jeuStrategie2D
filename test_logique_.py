@@ -9,6 +9,7 @@ import pygame
 import random
 
 from unit_ import *
+from personnages import *
 
 
 
@@ -51,25 +52,21 @@ aire_de_repos = Personnage('aire_de_repos', 'Panneaux de signalisation', 'plante
 
  
 #combattants par défaut
-fighter_perso1 = Archer(perso=perso1, x=0, y=0, health=100, team='None', attack_power=4, defense_power=3, agility_power=2, speed = 60)
-fighter_perso2 = Aerien(perso=perso2, x=1, y=0, health=100, team='None', attack_power=1, defense_power=5, agility_power=1, speed = 85)
-fighter_perso3 = Terrien(perso=perso3, x=1, y=1, health=100, team='None', attack_power=6, defense_power=5, agility_power=1, speed = 10)
-fighter_perso4 = Terrien(perso=perso2, x=0, y=1, health=80, team='None', attack_power=5, defense_power=4, agility_power=2, speed = 40)
-fighter_perso5 = Terrien(perso=perso3, x=6, y=6, health=80, team='None', attack_power=5, defense_power=4, agility_power=2, speed = 40)
-fighter_perso6 = Archer(perso=perso1, x=7, y=6, health=80, team='None',  attack_power=2, defense_power=2, agility_power=1, speed = 70)
-fighter_perso7 = Aerien(perso=perso2, x=7, y=7, health=100, team='None', attack_power=1, defense_power=5, agility_power=1, speed = 65)
-fighter_perso8 = Archer(perso=perso3, x=6, y=6, health=100, team='None', attack_power=4, defense_power=3, agility_power=2, speed = 60)
+fighter_perso1 = Archer(perso=perso1, x=0, y=0, health=100, team='undefined', attack_power=4, defense_power=3, agility_power=2, speed = 60)
+fighter_perso2 = Aerien(perso=perso2, x=1, y=0, health=100, team='undefined', attack_power=1, defense_power=5, agility_power=1, speed = 85)
+fighter_perso3 = Terrien(perso=perso3, x=1, y=1, health=100, team='undefined', attack_power=6, defense_power=5, agility_power=1, speed = 10)
+fighter_perso4 = Terrien(perso=perso2, x=0, y=1, health=80, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed = 40)
+fighter_perso5 = Terrien(perso=perso3, x=6, y=6, health=80, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed = 40)
+fighter_perso6 = Archer(perso=perso1, x=7, y=6, health=80, team='undefined',  attack_power=2, defense_power=2, agility_power=1, speed = 70)
+fighter_perso7 = Aerien(perso=perso2, x=7, y=7, health=100, team='undefined', attack_power=1, defense_power=5, agility_power=1, speed = 65)
+fighter_perso8 = Archer(perso=perso3, x=6, y=6, health=100, team='undefined', attack_power=4, defense_power=3, agility_power=2, speed = 60)
 
        
 #Combattants par Univers
 
-
-liste_combattants = [fighter_perso1, fighter_perso2, fighter_perso3, fighter_perso4, fighter_perso5, fighter_perso6, fighter_perso7, fighter_perso8]
-
-
 class Test:
     
-
+    
     def __init__(self):
         
         
@@ -81,26 +78,37 @@ class Test:
         self.enemy_units = [
                             ]
         
+        
+        self.liste_combattants = Unit.get_instances()
+        #print('\n', self.liste_combattants)
+        
     def selector(self, team, discriminant, nom):
         if discriminant == 'personnage':
-            nom.team = team
-            if team == 'player1':
-                self.player1_units.append(nom)
-            if team == 'enemy':
-                self.enemy_units.append(nom)
+            for i in self.liste_combattants:
+                if i.perso.nom == nom:
+                    if team == 'player1':
+                        i.team = 'player1'
+                        self.player1_units.append(i)
+                    else:
+                        i.team = 'enemy'
+                        self.enemy_units.append(i)
+                    self.liste_combattants.pop(i)
             
         elif discriminant == 'univers':
             selected = []
-            for i in range (len(liste_combattants)) :
-                if liste_combattants[i].perso.univers == nom :
-                    liste_combattants[i].team = team 
-                    selected.append(liste_combattants[i].perso.nom)
-                    #print(selected)
+            for j, i in enumerate (self.liste_combattants) :
+                if i.perso.univers == nom :
+                    i.perso.team = team 
+                    selected.append(i.perso.nom)
+                    print(selected)
                 if team == 'player1':
+                    i.team = team
                     self.player1_units+=selected
-                if team == 'enemy':
+                else:
+                    i.team = 'enemy'
                     self.enemy_units+=selected
-                selected=[]
+                selected = []
+                print(self.liste_combattants)
                 
         else:
             raise TypeError("Sélection impossible, erreur input")
@@ -110,12 +118,70 @@ class Test:
     
 
     def show_teams(self):
-        print(f"l'equipe du joueur 1 est composé de {self.player1_units}\n")
+        print(f"\nl'equipe du joueur 1 est composé de {self.player1_units}")
         print(f"l'equipe de enemy est composé de {self.enemy_units}")
     
         
         #help(perso1)
         #help(Fighter_perso1)
+    
+    def run_ui(self):
+        """Run the command-line interface for selecting fighters."""
+        
+        print(self.liste_combattants)
+        while True:
+            
+            if len(self.player1_units) < 4:
+                equipe = 'player1'
+                print("\n===================\nc'est à player1 de choisir")    
+                
+            elif len(self.enemy_units) < 4 :
+                equipe = 'enemy'
+                print("\n==================\nc'est à l'adversaire de choisir")    
+                
+            else:
+                print('fin choix, la partie va commencer. Les équipes sont les suivantes')
+                self.show_teams()
+                break
+            
+            print("Menu:")
+            print("1. Sélection par personnage")
+            print("2. Sélection par univers")
+            print("3. Afficher les équipes")
+            print("4. Fin")
+            
+            choice = input("Entrez l'option souhaitée (1-4): ")
+            
+                
+            if choice == '1':
+                print("Combattants dispo:")
+                for i, fighter in enumerate(self.liste_combattants):
+                    #if fighter.team == 'undefined':  # Only show unselected fighters
+                    print(f"{i + 1}: {fighter.perso.nom} Team: {fighter.team})")
+                    
+                fighter_choice = input("Entrez le numéro du combattant choisi: ")
+                if int(fighter_choice) - 1 < len(self.liste_combattants):
+                    selected_fighter = self.liste_combattants[num]
+                    print(selected_fighter)
+                    if selected_fighter.team =='undefined':
+                        self.selector(equipe, 'personnage', selected_fighter)
+                    else:
+                        print("Le combattant est déjà sélectionnné")
+                else
+                    print("Nombre invalide")
+    
+            elif choice == '2':
+                universe_name = input("Enter the universe name (e.g., 'notre jeu', 'FNAF', 'SNK'): ")
+                self.selector(equipe, 'univers', universe_name)
+                
+            elif choice == '3':
+                self.show_teams()
+                
+            elif choice == '4':
+                print("Lancement du jeu...")
+                break
+            else:
+                print("Invalid choice. Please try again.")
 
 
 def main():
@@ -142,8 +208,8 @@ def main():
     print(fighter_perso3.team)
     
     test = Test()
-    test.selector('player1', 'univers', 'notre jeu')
-    print(fighter_perso3.team)
+    #test.selector('player1', 'univers', 'notre jeu')
+    #print(fighter_perso3.team)
     
     
     class Mere:
@@ -155,6 +221,8 @@ def main():
         
     a = Fille()
     a.test()
+    
+    test.run_ui()
     
     """
     hello = 'blabla'

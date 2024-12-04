@@ -48,6 +48,14 @@ class Unit():
     draw(screen)
         Dessine l'unité sur la grille.
     """
+    
+    _instances = []
+    
+    @classmethod
+    def get_instances(cls):
+        # Return a copy of the list of instances
+        return cls._instances.copy()
+
 
     def __init__(self, perso, x, y, health, team):
         """
@@ -76,8 +84,10 @@ class Unit():
         #print(f'{self} est self.team)
         self.is_selected = False
         
+        Unit._instances.append(self) 
+        
 
-    def move(self, dx, dy):
+    def move(self, dx, dy, player_units, enemy_units):
         """
         if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
             self.x += dx
@@ -87,9 +97,31 @@ class Unit():
         #print('déplacement déctecté') 
         if self.current_move < self.nombre_deplacements:
             if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
-                self.x += dx
-                self.y += dy
-                self.current_move += 1
+                try_x = self.x + dx
+                try_y = self.y + dy
+                test = 0
+                for enemy in enemy_units:
+                    if (enemy.x == try_x and enemy.y == try_y):
+                        test = 1
+                        break
+                if test==0:
+                    for player in player_units:
+                        if player.x == try_x and player.y == try_y:
+                            test = 2
+                            break
+                if test == 1:
+                    print('déplacement impossible !')
+                else:
+                    if test == 2:
+                        player.x = self.x
+                        player.y = self.y
+                    self.x = try_x
+                    self.y = try_y
+                    self.current_move += 1
+                    print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                    
+                    
+                        
                 #print(self.current_move)
                 #print(f'il vous reste {self.nombre_deplacements - self.current_move}')
         else:
@@ -102,17 +134,33 @@ class Unit():
             target.attack_critique_esquive(self)
             #target.HPloss(30, self, crit, choix) #du point de vue du target, il y a perte de pv
             print('attack done')
+            
+            
+    def filter_draw(self, icon_scaled ,color):
+        # Create a color filter surface
+        filtre = (color[0], color[1], color[2], 70)  # Red color with some transparency
+        filtre_surface = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
+        filtre_surface.fill(filtre)
+        return filtre_surface
 
-    def draw(self, screen):
+    def draw(self, screen, liste_perso):
         """Affiche l'unité sur l'écran."""
         color = BLUE if self.team == 'player1' else RED
         if self.is_selected:
             pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
                              self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-        pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
+            
+        if self.perso.icon !=None:
+            icon_scaled = pygame.transform.scale(self.perso.icon, (CELL_SIZE, CELL_SIZE))
+            screen.blit(icon_scaled, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+            filtre = self.filter_draw(icon_scaled ,color)
+            screen.blit(filtre, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+            
+        elif self.perso.icon == None:
+            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
-        
-        
+
+
     def estim_nb_deplacements(self):
         nombre_deplacements = 1 
         nombre_deplacements += self.speed//20
@@ -223,7 +271,7 @@ class Unit():
             if isinstance(other, Archer):
                 faiblesse = True
         
-        print(self.perso.de_type)
+        #print(self.perso.de_type)
         if self.perso.de_type == "feu":
             if other.perso.de_type == 'plante':
                 resistance = True
@@ -306,7 +354,7 @@ class Unit():
         else:
             raise TypeError('attack_critique_esquive, logic error')
         
-        print(self.health, target.health)
+        #print(self.health, target.health)
         print('\nattaque terminée\n===================================\n')    
             
 ###############################################"""""
@@ -565,35 +613,32 @@ class Terrien(Unit):
 
 ############################################
 ############################################
+fighter_freddy = Terrien(perso=Freddy, x=2, y=2, health=120, team='player1', attack_power=7, defense_power=5, agility_power=2, speed=30)
+fighter_chica = Aerien(perso=Chica, x=2, y=3, health=100, team='player1', attack_power=5, defense_power=4, agility_power=3, speed=70)
+fighter_bonnie = Terrien(perso=Bonnie, x=3, y=2, health=110, team='player1', attack_power=6, defense_power=5, agility_power=2, speed=40)
+fighter_foxy = Aerien(perso=Foxy, x=3, y=3, health=95, team='player1', attack_power=4, defense_power=3, agility_power=5, speed=80)
 
-fighter_freddy = Terrien(perso=Freddy, x=2, y=2, health=120, team='FNAF', attack_power=7, defense_power=5, agility_power=2, speed=30)
-fighter_chica = Aerien(perso=Chica, x=2, y=3, health=100, team='FNAF', attack_power=5, defense_power=4, agility_power=3, speed=70)
-fighter_bonnie = Terrien(perso=Bonnie, x=3, y=2, health=110, team='FNAF', attack_power=6, defense_power=5, agility_power=2, speed=40)
-fighter_foxy = Aerien(perso=Foxy, x=3, y=3, health=95, team='FNAF', attack_power=4, defense_power=3, agility_power=5, speed=80)
+fighter_eren = Terrien(perso=Eren, x=4, y=4, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
+fighter_armin = Archer(perso=Armin, x=4, y=5, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
+fighter_mikasa = Aerien(perso=Mikasa, x=5, y=4, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
+fighter_levi = Aerien(perso=Levi, x=5, y=5, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
 
-fighter_eren = Terrien(perso=Eren, x=4, y=4, health=120, team='SNK', attack_power=8, defense_power=6, agility_power=3, speed=50)
-fighter_armin = Archer(perso=Armin, x=4, y=5, health=90, team='SNK', attack_power=3, defense_power=4, agility_power=5, speed=75)
-fighter_mikasa = Aerien(perso=Mikasa, x=5, y=4, health=110, team='SNK', attack_power=7, defense_power=5, agility_power=4, speed=60)
-fighter_levi = Aerien(perso=Levi, x=5, y=5, health=95, team='SNK', attack_power=6, defense_power=4, agility_power=5, speed=85)
+fighter_dre = Terrien(perso=Dre, x=6, y=6, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_eminem = Archer(perso=Eminem, x=6, y=7, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)
+fighter_fifty = Terrien(perso=Fifty, x=7, y=6, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
+fighter_snoop = Aerien(perso=Snoop, x=7, y=7, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
 
-fighter_dre = Terrien(perso=Dre, x=6, y=6, health=100, team='WestCoast', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_eminem = Archer(perso=Eminem, x=6, y=7, health=90, team='WestCoast', attack_power=6, defense_power=3, agility_power=4, speed=60)
-fighter_fifty = Terrien(perso=Fifty, x=7, y=6, health=100, team='WestCoast', attack_power=4, defense_power=5, agility_power=2, speed=40)
-fighter_snoop = Aerien(perso=Snoop, x=7, y=7, health=95, team='WestCoast', attack_power=3, defense_power=4, agility_power=5, speed=70)
+fighter_nietzsche = Terrien(perso=Nietzsche, x=8, y=8, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_marx = Terrien(perso=Marx, x=8, y=9, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
+fighter_camus = Archer(perso=Camus, x=9, y=8, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
+fighter_socrates = Terrien(perso=Socrates, x=9, y=9, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
 
-fighter_nietzsche = Terrien(perso=Nietzsche, x=8, y=8, health=100, team='philosophe', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_marx = Terrien(perso=Marx, x=8, y=9, health=110, team='philosophe', attack_power=6, defense_power=5, agility_power=2, speed=45)
-fighter_camus = Archer(perso=Camus, x=9, y=8, health=95, team='philosophe', attack_power=4, defense_power=3, agility_power=4, speed=60)
-fighter_socrates = Terrien(perso=Socrates, x=9, y=9, health=105, team='philosophe', attack_power=5, defense_power=5, agility_power=3, speed=50)
+fighter_trump = Aerien(perso=Trump, x=9, y=9, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
+fighter_biden = Aerien(perso=Biden, x=10, y=9, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
+fighter_obama = Aerien(perso=Obama, x=10, y=10, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50)
+fighter_bush = Aerien(perso=Bush, x=11, y=9, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40)
 
-fighter_trump = Aerien(perso=Trump, x=9, y=9, health=110, team='USA', attack_power=7, defense_power=5, agility_power=2, speed=50)
-fighter_biden = Aerien(perso=Biden, x=10, y=9, health=100, team='USA', attack_power=5, defense_power=4, agility_power=3, speed=45)
-fighter_obama = Aerien(perso=Obama, x=10, y=10, health=105, team='USA', attack_power=6, defense_power=5, agility_power=3, speed=50)
-fighter_bush = Aerien(perso=Bush, x=11, y=9, health=100, team='USA', attack_power=5, defense_power=4, agility_power=2, speed=40)
-
-fighter_stop = Terrien(perso=Stop, x=12, y=12, health=150, team='Panneaux de signalisation', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
-fighter_danger = Terrien(perso=Danger, x=12, y=13, health=100, team='Panneaux de signalisation', attack_power=3, defense_power=4, agility_power=2, speed=30)
-fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=13, y=12, health=100, team='Panneaux de signalisation', attack_power=2, defense_power=3, agility_power=3, speed=30)
-fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=13, y=13, health=100, team='Panneaux de signalisation', attack_power=1, defense_power=2, agility_power=2, speed=20)
-
-    
+fighter_stop = Terrien(perso=Stop, x=12, y=12, health=150, team='undefined', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
+fighter_danger = Terrien(perso=Danger, x=12, y=13, health=100, team='undefined', attack_power=3, defense_power=4, agility_power=2, speed=30)
+fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=13, y=12, health=100, team='undefined', attack_power=2, defense_power=3, agility_power=3, speed=30)
+fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=13, y=13, health=100, team='undefined', attack_power=1, defense_power=2, agility_power=2, speed=20)
