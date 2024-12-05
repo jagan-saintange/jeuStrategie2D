@@ -113,12 +113,13 @@ class Unit():
                     print('déplacement impossible !')
                 else:
                     if test == 2:
-                        player.x = self.x
-                        player.y = self.y
-                    self.x = try_x
-                    self.y = try_y
+                        player.x, self.x = self.x, player.x
+                        player.y, self.y = self.y, player.y
+                        print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                    else:
+                        self.x = try_x
+                        self.y = try_y
                     self.current_move += 1
-                    print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
                     
                     
                         
@@ -159,6 +160,8 @@ class Unit():
         elif self.perso.icon == None:
             pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
                            2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+            
+        
 
 
     def estim_nb_deplacements(self):
@@ -613,32 +616,32 @@ class Terrien(Unit):
 
 ############################################
 ############################################
-fighter_freddy = Terrien(perso=Freddy, x=2, y=2, health=120, team='player1', attack_power=7, defense_power=5, agility_power=2, speed=30)
-fighter_chica = Aerien(perso=Chica, x=2, y=3, health=100, team='player1', attack_power=5, defense_power=4, agility_power=3, speed=70)
-fighter_bonnie = Terrien(perso=Bonnie, x=3, y=2, health=110, team='player1', attack_power=6, defense_power=5, agility_power=2, speed=40)
-fighter_foxy = Aerien(perso=Foxy, x=3, y=3, health=95, team='player1', attack_power=4, defense_power=3, agility_power=5, speed=80)
+fighter_freddy = Terrien(perso=Freddy, x=-1, y=-1, health=120, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=30)
+fighter_chica = Aerien(perso=Chica, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=70)
+fighter_bonnie = Terrien(perso=Bonnie, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=40)
+fighter_foxy = Aerien(perso=Foxy, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=5, speed=80)
 
-fighter_eren = Terrien(perso=Eren, x=4, y=4, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
-fighter_armin = Archer(perso=Armin, x=4, y=5, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
-fighter_mikasa = Aerien(perso=Mikasa, x=5, y=4, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
-fighter_levi = Aerien(perso=Levi, x=5, y=5, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
+fighter_eren = Terrien(perso=Eren, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
+fighter_armin = Archer(perso=Armin, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
+fighter_mikasa = Aerien(perso=Mikasa, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
+fighter_levi = Aerien(perso=Levi, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
 
-fighter_dre = Terrien(perso=Dre, x=6, y=6, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_eminem = Archer(perso=Eminem, x=6, y=7, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)
-fighter_fifty = Terrien(perso=Fifty, x=7, y=6, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
-fighter_snoop = Aerien(perso=Snoop, x=7, y=7, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
+fighter_dre = Terrien(perso=Dre, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_eminem = Archer(perso=Eminem, x=-1, y=-1, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)
+fighter_fifty = Terrien(perso=Fifty, x=-1, y=-1, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
+fighter_snoop = Aerien(perso=Snoop, x=-1, y=-1, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
 
-fighter_nietzsche = Terrien(perso=Nietzsche, x=8, y=8, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_marx = Terrien(perso=Marx, x=8, y=9, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
-fighter_camus = Archer(perso=Camus, x=9, y=8, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
-fighter_socrates = Terrien(perso=Socrates, x=9, y=9, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
+fighter_nietzsche = Terrien(perso=Nietzsche,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_marx = Terrien(perso=Marx, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
+fighter_camus = Archer(perso=Camus, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
+fighter_socrates = Terrien(perso=Socrates, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
 
-fighter_trump = Aerien(perso=Trump, x=9, y=9, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
-fighter_biden = Aerien(perso=Biden, x=10, y=9, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
-fighter_obama = Aerien(perso=Obama, x=10, y=10, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50)
-fighter_bush = Aerien(perso=Bush, x=11, y=9, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40)
+fighter_trump = Aerien(perso=Trump, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
+fighter_biden = Aerien(perso=Biden, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
+fighter_obama = Aerien(perso=Obama, x=-1, y=-1, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50)
+fighter_bush = Aerien(perso=Bush, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40)
 
-fighter_stop = Terrien(perso=Stop, x=12, y=12, health=150, team='undefined', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
-fighter_danger = Terrien(perso=Danger, x=12, y=13, health=100, team='undefined', attack_power=3, defense_power=4, agility_power=2, speed=30)
-fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=13, y=12, health=100, team='undefined', attack_power=2, defense_power=3, agility_power=3, speed=30)
-fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=13, y=13, health=100, team='undefined', attack_power=1, defense_power=2, agility_power=2, speed=20)
+fighter_stop = Terrien(perso=Stop, x=-1, y=-1, health=150, team='undefined', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
+fighter_danger = Terrien(perso=Danger, x=-1, y=-1, health=100, team='undefined', attack_power=3, defense_power=4, agility_power=2, speed=30)
+fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=-1, y=-1, health=100, team='undefined', attack_power=2, defense_power=3, agility_power=3, speed=30)
+fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=-1, y=-1, health=100, team='undefined', attack_power=1, defense_power=2, agility_power=2, speed=20)

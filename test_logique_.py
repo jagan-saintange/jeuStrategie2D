@@ -61,6 +61,11 @@ fighter_perso6 = Archer(perso=perso1, x=7, y=6, health=80, team='undefined',  at
 fighter_perso7 = Aerien(perso=perso2, x=7, y=7, health=100, team='undefined', attack_power=1, defense_power=5, agility_power=1, speed = 65)
 fighter_perso8 = Archer(perso=perso3, x=6, y=6, health=100, team='undefined', attack_power=4, defense_power=3, agility_power=2, speed = 60)
 
+
+startposP1 = [(0,0), (1,0), (1,1), (0,1), (2,2), (2,2), (2,2), (2,2)]
+startposE = [(GRID_SIZE-1,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-2), (GRID_SIZE-2,GRID_SIZE-1), (2,2),(2,2), (2,2)]
+random.shuffle(startposP1)
+random.shuffle(startposE)
        
 #Combattants par Univers
 
@@ -82,33 +87,60 @@ class Test:
         self.liste_combattants = Unit.get_instances()
         #print('\n', self.liste_combattants)
         
-    def selector(self, team, discriminant, nom):
-        if discriminant == 'personnage':
-            for i in self.liste_combattants:
-                if i.perso.nom == nom:
-                    if team == 'player1':
-                        i.team = 'player1'
-                        self.player1_units.append(i)
-                    else:
-                        i.team = 'enemy'
-                        self.enemy_units.append(i)
-                    self.liste_combattants.pop(i)
+    def ajout(self, team, i):
+        if team == 'player1':
+            i.team = 'player1'
+            x, y = startposP1.pop(0)
+            i.x = x
+            i.y = y
+            self.player1_units.append(i)
+        else:
+            #print('BIP')
+            i.team = 'enemy'
+            x, y = startposE.pop(0)
+            i.x = x
+            i.y = y
+            self.enemy_units.append(i)
+    
+    
+    def selector(self, team, discriminant, nom=None):
+        if discriminant == 'personnage' or discriminant == 'hasard':
+            #print('BIP')
+            if discriminant == 'hasard':
+                i = random.choice(self.liste_combattants)
+                print(i)
+                self.ajout(team, i)
+                    
+            if discriminant == 'personnage':
+                for i in self.liste_combattants:
+                    #print(i.perso.nom, nom)
+                    if i.perso.nom == nom:
+                        #print('BIP')
+                        self.ajout(team, i)
+
+
             
         elif discriminant == 'univers':
             selected = []
             for j, i in enumerate (self.liste_combattants) :
                 if i.perso.univers == nom :
                     i.perso.team = team 
-                    selected.append(i.perso.nom)
-                    print(selected)
-                if team == 'player1':
-                    i.team = team
-                    self.player1_units+=selected
-                else:
-                    i.team = 'enemy'
-                    self.enemy_units+=selected
-                selected = []
-                print(self.liste_combattants)
+                    selected.append(i)
+                    #print(selected)
+                    if team == 'player1':
+                        i.team = team
+                        x, y = startposP1.pop(0)
+                        print(x, y)
+                        i.x = x
+                        i.y = y
+                        self.player1_units+=selected
+                    else:
+                        i.team = 'enemy'
+                        x, y = startposE.pop(0)
+                        i.x = x
+                        i.y = y
+                        self.enemy_units+=selected
+                    selected = []
                 
         else:
             raise TypeError("Sélection impossible, erreur input")
@@ -118,18 +150,29 @@ class Test:
     
 
     def show_teams(self):
-        print(f"\nl'equipe du joueur 1 est composé de {self.player1_units}")
-        print(f"l'equipe de enemy est composé de {self.enemy_units}")
+        show1=[_.perso.nom for _ in self.player1_units]
+        show2=[_.perso.nom for _ in self.enemy_units]
+        print(f"\nl'equipe du joueur 1 est composé de {show1}")
+        print(f"l'equipe de enemy est composé de {show2}")
     
-        
-        #help(perso1)
-        #help(Fighter_perso1)
+    
     
     def run_ui(self):
         """Run the command-line interface for selecting fighters."""
         
         print(self.liste_combattants)
         while True:
+            
+            
+            print("\n\n===============\nMenu:")
+            print("1. Sélection par personnage")
+            print("2. Sélection par univers")
+            print("3. Sélection au hasard")
+            print("4. Afficher les équipes")
+            print("5. Fin")
+            
+            choice = input("Entrez l'option souhaitée (1-4): ")
+            
             
             if len(self.player1_units) < 4:
                 equipe = 'player1'
@@ -144,42 +187,43 @@ class Test:
                 self.show_teams()
                 break
             
-            print("Menu:")
-            print("1. Sélection par personnage")
-            print("2. Sélection par univers")
-            print("3. Afficher les équipes")
-            print("4. Fin")
-            
-            choice = input("Entrez l'option souhaitée (1-4): ")
-            
                 
             if choice == '1':
-                print("Combattants dispo:")
-                for i, fighter in enumerate(self.liste_combattants):
-                    #if fighter.team == 'undefined':  # Only show unselected fighters
-                    print(f"{i + 1}: {fighter.perso.nom} Team: {fighter.team})")
-                    
-                fighter_choice = input("Entrez le numéro du combattant choisi: ")
-                if int(fighter_choice) - 1 < len(self.liste_combattants):
-                    selected_fighter = self.liste_combattants[num]
-                    print(selected_fighter)
-                    if selected_fighter.team =='undefined':
-                        self.selector(equipe, 'personnage', selected_fighter)
+                while (equipe == 'player1' and len(self.player1_units) < 4) or (equipe == 'enemy' and len(self.enemy_units) < 4):
+                
+                    print("Combattants dispo:")
+                    for i, fighter in enumerate(self.liste_combattants):
+                        #if fighter.team == 'undefined':  # Only show unselected fighters
+                        print(f"{i + 1}: {fighter.perso.nom} Team: {fighter.team})")
+                        
+                    fighter_choice = input("Entrez le numéro du combattant choisi: ")
+                    j = int(fighter_choice) - 1
+                    if 0 < j < len(self.liste_combattants):
+                        print('BIP')
+                        selected_fighter = self.liste_combattants[j]
+                        print('\n',selected_fighter.perso.nom)
+                        if selected_fighter.team =='undefined':
+                            self.selector(equipe, 'personnage', selected_fighter.perso.nom)
+                        else:
+                            print("LE COMBATTANT EST DEJA SELECTIONÉ ! ")
                     else:
-                        print("Le combattant est déjà sélectionnné")
-                else
-                    print("Nombre invalide")
+                        print("NOMBRE INVALIDE")
     
             elif choice == '2':
-                universe_name = input("Enter the universe name (e.g., 'notre jeu', 'FNAF', 'SNK'): ")
+                universe_name = input("Entrez le nom de l'univers des persos à sélectionner': ")
                 self.selector(equipe, 'univers', universe_name)
                 
             elif choice == '3':
+                while len(self.player1_units) < 4:
+                    self.selector('player1', 'hasard')
+                    self.selector('enemy', 'hasard')
+            
+            elif choice == '4':
                 self.show_teams()
                 
-            elif choice == '4':
-                print("Lancement du jeu...")
-                break
+            elif choice == '5':
+                print("Fin")
+                break #mettre un print lancement du jeu en sortie
             else:
                 print("Invalid choice. Please try again.")
 

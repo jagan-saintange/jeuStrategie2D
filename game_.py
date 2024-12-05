@@ -1,6 +1,7 @@
 import pygame
 import random
 import sys
+import time
 
 from unit_ import *
 from personnages import *
@@ -33,16 +34,16 @@ class Game:
 
 
         self.screen = screen
-        self.player_units = [#Archer(perso=perso1, x=0, y=0, health=100, team='player1', attack_power=4, defense_power=3, agility_power=2, speed = 60),
-                             #Aerien(perso=perso2, x=1, y=0, health=100, team='player1', attack_power=1, defense_power=5, agility_power=1, speed = 85),
-                             #Terrien(perso=perso3, x=1, y=1, health=100, team='player1', attack_power=6, defense_power=5, agility_power=1, speed = 10),
-                             Terrien(perso=perso3, x=0, y=1, health=180, team='player1', attack_power=5, defense_power=4, agility_power=2, speed = 40)
+        self.player_units = [fighter_freddy, 
+                             fighter_chica, 
+                             fighter_bonnie, 
+                             fighter_foxy
                              ]
 
-        self.enemy_units = [#Terrien(perso=perso3, x=6, y=6, health=80, team='enemy', attack_power=5, defense_power=4, agility_power=2, speed = 40),
-                            #Archer(perso=perso1, x=7, y=6, health=80, team='enemy',  attack_power=2, defense_power=2, agility_power=1, speed = 70),
-                            #Aerien(perso=perso2, x=7, y=7, health=100, team='enemy', attack_power=1, defense_power=5, agility_power=1, speed = 65),
-                            Archer(perso=perso2, x=6, y=7, health=200, team='enemy', attack_power=4, defense_power=1, agility_power=2, speed = 60)
+        self.enemy_units = [fighter_eren,
+                            fighter_armin,
+                            fighter_mikasa,
+                            fighter_levi
                             ]
 
 
@@ -55,13 +56,13 @@ class Game:
         """
         #Tour du joueur
         """
-        if len(self.player_units)!=0:
+        if len(self.enemy_units)!=0 and len(self.player_units)!=0:
             for selected_unit in self.player_units:
     
                 # Tant que l'unité n'a pas terminé son tour
                 has_acted = False
                 selected_unit.is_selected = True
-                self.flip_display()
+                self.flip_display(selected_unit)
                 print(f'il vous reste {selected_unit.nombre_deplacements - selected_unit.current_move} déplacements, pour cette unité')
                 while not has_acted:
     
@@ -73,11 +74,15 @@ class Game:
                             pygame.quit()
                             sys.exit()
                         
+                        
+                        
                         elif event.type == pygame.KEYDOWN:
                             if event.key == pygame.K_ESCAPE:  # Vérifier si la touche Échap est pressée
                                 pygame.quit()
                                 sys.exit()
-                                
+                        
+                        
+                        
                         # Gestion des touches du clavier
                         if event.type == pygame.KEYDOWN:
     
@@ -92,10 +97,12 @@ class Game:
                             elif event.key == pygame.K_DOWN:
                                 dy = 1
                             
+                            
                             if dx != 0 or dy != 0:
-                                selected_unit.move(dx, dy)
+                                selected_unit.move(dx, dy, self.player_units, self.enemy_units)
                                 print(f'il vous reste {selected_unit.nombre_deplacements - selected_unit.current_move} déplacements, pour cette unité')
-                                self.flip_display()
+                                
+                                self.flip_display(selected_unit)
     
                             # Attaque (touche espace) met fin au tour
                             if event.key == pygame.K_SPACE:
@@ -111,10 +118,12 @@ class Game:
                                             if units.health <= 0:
                                                 self.player_units.remove(units)
                                                 #print('UNITS A ETE REMOVED')
+                                        self.flip_display(selected_unit)
     
                                 has_acted = True
                                 selected_unit.is_selected = False
-                            
+                                self.flip_display(selected_unit)
+                                
                             
                             
 
@@ -122,14 +131,18 @@ class Game:
         """
         #IA très simple pour les ennemis.
         """
-        if len(self.enemy_units)!=0:
+        
+        print(len(self.enemy_units), len(self.player_units))
+        if len(self.enemy_units)!=0 and len(self.player_units)!=0:
             for enemy in self.enemy_units:
+                self.flip_display(enemy)
+                time.sleep(0.5)
     
                 # Déplacement aléatoire
                 target = random.choice(self.player_units)
                 dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
                 dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-                enemy.move(dx, dy)
+                enemy.move(dx, dy, self.enemy_units, self.player_units)
     
                 # Attaque si possible
                 if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
@@ -142,8 +155,13 @@ class Game:
                         if units.health <= 0:
                             self.player_units.remove(units)
                             print('UNITS A ETE REMOVED')
+                
+                
+                            
+                
+    
 
-    def flip_display(self):
+    def flip_display(self, selected_unit):
         """
         #Affiche le jeu.
         """
@@ -155,13 +173,29 @@ class Game:
                 rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
                 pygame.draw.rect(self.screen, WHITE, rect, 1)
 
+       
+        units = self.player_units + self.enemy_units
         # Affiche les unités
-        for unit in self.player_units + self.enemy_units:
-            unit.draw(self.screen)
+        for unit in units:
+            unit.draw(self.screen, units)
+            
+        #CURSEUR DE sélection
+        pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
+        
+        print('boop')
+            
+            
 
         # Rafraîchit l'écran
         pygame.display.flip()
-
+        
+    def test_fin(self):
+        if len(self.player_units) == 0 or len(self.enemy_units) == 0:
+            return False
+        else:
+            return True
+        
+    
 
 def main():
 
@@ -178,10 +212,10 @@ def main():
     running = True
     while running:
         game.handle_player_turn()
+        running = game.test_fin()
         game.handle_enemy_turn()
-        game.flip_display()
-        if len(game.player_units) == 0 or len(game.enemy_units) == 0:
-            
+        running = game.test_fin()
+        if len(game.player_units) == 0 or len(game.enemy_units) == 0: 
             running = False
             
     print('FIN DU JEU, vous pouvez quitter')
