@@ -1,8 +1,8 @@
 import pygame
 
 # Constantes pour la grille
-GRID_SIZE = 8
-CELL_SIZE = 60
+GRID_SIZE = 21
+CELL_SIZE = 30
 WIDTH = GRID_SIZE * CELL_SIZE + 500  # Augmente l'espace pour la colonne des compétences
 HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 30
@@ -13,13 +13,14 @@ BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
 class Unit:
-    def __init__(self, x, y, health, attack_power, team):
+    def __init__(self, x, y, health, attack_power, team, type):
         self.x = x # Position x sur la grille
         self.y = y # Position y sur la grille
         self.health = health # Santé de l'unité
         self.max_health = health
         self.attack_power = attack_power # Puissance d'attaque
         self.team = team # Équipe ('player' ou 'enemy')
+        self.type = type # Paramètre pour différencier les unités
         self.is_selected = False # Indique si l'unité est sélectionnée
         self.effects = [] # Liste des effets appliqués (ex: paralysie, bouclier)
 

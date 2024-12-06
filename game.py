@@ -2,6 +2,7 @@ import pygame
 import random
 from unit import *
 from abilities import *
+from interface import Interface
 
 class Game:
     """
@@ -28,11 +29,15 @@ class Game:
             La surface de la fenêtre du jeu.
         """
         self.screen = screen
-        self.player_units = [Unit(0, 0, 100, 10, 'player'),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
-                             Unit(1, 0, 100, 10, 'player')]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
-        self.enemy_units = [Unit(6, 6, 100, 10, 'enemy'),        # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
-                            Unit(7, 6, 100, 10, 'enemy')]        # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
-
+        self.interface = Interface(self.screen, self)
+        self.player_units = [Unit(0, 0, 100, 10, 'player', 0),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
+                             Unit(1, 0, 100, 10, 'player', 1)]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
+        self.enemy_units = [Unit(6, 6, 100, 10, 'enemy', 0),       # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
+                            Unit(7, 6, 100, 10, 'enemy', 1)]       # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
+        self.player_row = 5
+        self.player_col = 5
+        self.messages = []
+        
         # Initialisation des compétences
         self.competences = [Poison(),
                             PluieDeProjectiles(),
@@ -58,6 +63,21 @@ class Game:
 
         self.competences_utilisees = set() # Suivi des compétences utilisées
 
+    def flip_display(self):
+        """
+        Met à jour l'affichage en utilisant l'interface graphique.
+        """
+        # Utiliser la méthode de l'interface pour afficher le jeu
+        self.interface.draw_interface(self.screen, self.player_row, self.player_col)
+
+        # Afficher les unités (joueurs et ennemis)
+        for unit in self.player_units + self.enemy_units:
+            self.interface.draw_unit(self.screen, unit)
+
+        competences_disponibles = [c for c in self.competences if c.nom not in self.competences_utilisees]
+        self.interface.afficher_competences(self.screen, competences_disponibles)
+        pygame.display.flip() # Mettre à jour l'écran
+
     def handle_player_turn(self):
         """Tour du joueur"""
         for selected_unit in self.player_units:
@@ -67,13 +87,13 @@ class Game:
                     selected_unit.attack(dommage = effet["dommages"]) # Dégats infligés = -15 PdV
                 effet["duree"] -= 1 # Réduit la durée de l'effet
                 if effet["duree"] <= 0:
-                    print(f"{selected_unit.team} unité à ({selected_unit.x}, {selected_unit.y}) n'est plus affectée par {effet['effet']}.")
+                    self.interface.ajouter_message(f"{selected_unit.team} unité à ({selected_unit.x}, {selected_unit.y}) n'est plus affectée par {effet['effet']}.")
                     selected_unit.effects.remove(effet) # Suppression de l'effet, une fois sa durée écoulée
             selected_unit.is_selected = True
             self.flip_display()
 
             # Étape 1 : Déplacement de l'unité
-            print(f"Déplacez l'unité : ({selected_unit.x}, {selected_unit.y})")
+            self.interface.ajouter_message(f"Déplacez l'unité : ({selected_unit.x}, {selected_unit.y})")
             max_deplacements = 3
             while max_deplacements > 0:
                 self.flip_display()
@@ -97,20 +117,20 @@ class Game:
                             dy = 1
                         selected_unit.move(dx, dy)
                         max_deplacements -= 1
-                        print(f"L'unité a été déplacée à ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
+                        self.interface.ajouter_message(f"L'unité a été déplacée à ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
                         break
 
             # Étape 2 : Sélection et utilisation d'une compétence
-            print(f"Sélectionnez une compétence pour l'unité : ({selected_unit.x}, {selected_unit.y})")
+            self.interface.ajouter_message(f"Sélectionnez une compétence pour l'unité : ({selected_unit.x}, {selected_unit.y})")
             while not has_acted: # Tant que l'unité n'a pas agi, on répète la boucle pour permettre la sélection et l'utilisation d'une compétence
                 competence = self.selectionner_competence() # Appel de la fonction de sélection pour que le joueur choisisse une compétence disponible
                 if competence: # Dans le cas où une compétence a été sélectionnée
                     cible = self.selectionner_cible(selected_unit, competence) # Appel de la fonction de sélection pour que le joueur choisisse une cible qui subira la compétence
                     if cible: # Dans le cas où une cible valide (unité ennemie) a été sélectionnée
-                        self.utiliser_competence(selected_unit, cible, competence) # Utilisation de la compétence sélectionnée sur la cible choisie
+                        self.utiliser_competence(selected_unit, cible, competence, self.interface) # Utilisation de la compétence sélectionnée sur la cible choisie
                         self.competences_utilisees.add(competence.nom) # Ajout du nom de la compétence utilisée à l'ensemble des compétences déjà utilisées
                         if len(self.competences_utilisees) == len(self.competences): # On vérifie si toutes les compétences disponibles ont été utilisées
-                            print("Toutes les compétences ont été utilisées. Recharge des compétences...")
+                            self.interface.ajouter_message("Toutes les compétences ont été utilisées. Recharge des compétences...")
                             self.competences_utilisees.clear() # Vide l'ensemble des compétences utilisées pour les rendre toutes disponibles à nouveau (nouveau cycle)
                     has_acted = True # Indique que l'unité a effectué ses actions (déplacement + usage de compétence) pour ce tour
                     selected_unit.is_selected = False # Réinitialisation de l'état de l'unité, indiquant qu'elle n'est plus active
@@ -126,11 +146,11 @@ class Game:
                     enemy.attack(dommage = effet["dommages"])  # Applique les dégâts du poison
                 effet["duree"] -= 1  # Réduit la durée de l'effet
                 if effet["duree"] <= 0:
-                    print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) n'est plus affectée par {effet['effet']}.")
+                    self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) n'est plus affectée par {effet['effet']}.")
                     enemy.effects.remove(effet)  # Supprime l'effet expiré
             # Vérifie si l'ennemi est immobilisé (paralysie)
             if any(effet["effet"] == "immobilisé" for effet in enemy.effects):
-                print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est paralysée et ne peut pas agir ce tour.")
+                self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est paralysée et ne peut pas agir ce tour.")
                 continue # Passe au prochain ennemi
 
             # Déplacement aléatoire
@@ -140,7 +160,7 @@ class Game:
             enemy.move(dx, dy)
             # Vérifie si l'ennemi est désarmé (ne peut pas attaquer)
             if any(effet["effet"] == "désarmé" for effet in enemy.effects):
-                print(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est désarmée et ne peut pas attaquer.")
+                self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est désarmée et ne peut pas attaquer.")
                 continue # Passe au prochain ennemi
 
             # Attaque si possible
@@ -154,26 +174,11 @@ class Game:
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 # FONCTIONS RELATIVES AUX COMPÉTENCES:
 
-    # Fonction qui affiche les compétences disponibles et leurs touches associées à droite du plateau de jeu
-    def afficher_competences(self, screen, competences):
-        font = pygame.font.SysFont(None, 30) # Police de type "None" de taille 30
-        x = GRID_SIZE * CELL_SIZE + 20 # Coordonnée x de la position de départ pour l'affichage
-        y = 20  # Coordonnée y de la position de départ pour l'affichage
-        for competence in competences: # On parcourt la liste des compétences disponibles à afficher
-            # Recherche de la touche associée à la compétence, ou "?" si aucune n'est associée
-            touche = self.touches_competences.get(competence.nom, None) # Si aucune touche n'a été associée à cette compétence, retourne "None"
-            touche_nom = pygame.key.name(touche).upper() if touche else "?" # Si une touche est trouvée, on récupère son nom sous forme de chaîne en majuscules avec pygame.key.name (sinon "?" pour indiquer qu'aucune touche n'est associée)
-            texte = f"{touche_nom}: {competence.nom}" # Affichage > "Touche du clavier" : "Compétence associée"
-            texte_surface = font.render(texte, True, WHITE) # Texte en blanc
-            screen.blit(texte_surface, (x, y)) # Affichage du texte à l'écran, aux coordonnées (x, y)
-            y += 40 # Passage à la ligne suivante pour afficher la compétence suivante
-        pygame.display.flip() # Met à jour l'affichage de l'écran
-
     # Fonction permettant à l'utilisateur de sélectionner une compétence parmi celles qu'il n'a pas encore utilité
     def selectionner_competence(self):
         # Sélection des compétences parmi celles qui n'ont pas encore été utilisées dans ce cycle (un cycle dure 5 tours)
         competences_disponibles = [c for c in self.competences if c.nom not in self.competences_utilisees]
-        self.afficher_competences(self.screen, competences_disponibles) # Méthode qui met à jour l'affichage des compétences
+        self.interface.afficher_competences(self.screen, competences_disponibles) # Méthode qui met à jour l'affichage des compétences
         while True: # Boucle principale permettant de gérer la sélection du joueur
             for event in pygame.event.get(): # On parcourt les événements en attente
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
@@ -189,14 +194,14 @@ class Game:
                         return competence # Retourne la compétence sélectionnée pour qu'elle puisse être utilisée
 
     # Fonction permettant à l'utilisateur d'utiliser une compétence sur une cible (ou une position s'il s'agit des compétences Vortex et Téléportation)
-    def utiliser_competence(self, utilisateur, cible, competence):
+    def utiliser_competence(self, utilisateur, cible, competence, interface):
         if competence and utilisateur and cible: # Dans le cas où la compétence peut être utilisée
-            competence.utiliser(utilisateur, cible, self) # On l'utilise
+            competence.utiliser(utilisateur, cible, self, self.interface) # On l'utilise
             if isinstance(cible, Unit) and cible.team == "enemy" and cible.health <= 0: # Dans le cas où la cible est une unité ennemie ET qu'elle n'a plus de PdV
                 if cible in self.enemy_units:
                     self.enemy_units.remove(cible) # Suppression de la cible de la liste des ennemis
         else: # Dans le cas où la cible est une unité alliée
-            print("Impossible d'utiliser la compétence. Vérifiez l'utilisateur, la cible et la compétence.")
+            self.interface.ajouter_message("Impossible d'utiliser la compétence. Vérifiez l'utilisateur, la cible et la compétence.")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 # FONCTION RELATIVE AU CURSEUR (SÉLÉCTION DE CIBLE ET/OU DE CASE):
@@ -272,7 +277,7 @@ class Game:
                             elif event.key == pygame.K_DOWN: # Si la flèche du bas (touches fléchées) est pressée, le curseur se déplace en bas
                                 curseur_y = min(GRID_SIZE - 1, curseur_y + 1) # Restreint le curseur aux bordures de la grille (axes des ordonnées)
                             elif event.key == pygame.K_RETURN: # Validation en pressant "Entrée"
-                                return Unit(curseur_x, curseur_y, 0, 0, 'neutral') # Dans le cas où aucune unité ennemie n'est trouvée, on retourne une position vide comme cible "neutre"
+                                return Unit(curseur_x, curseur_y, 0, 0, 'neutral', None) # Dans le cas où aucune unité ennemie n'est trouvée, on retourne une position vide comme cible "neutre"
 
         while True: # Cas général (compétences sans zone d'effet)
             self.flip_display() # Mise à jour de l'affichage
@@ -295,35 +300,20 @@ class Game:
                         for unit in self.enemy_units: # Parcourt les unités ennemies
                             if unit.x == curseur_x and unit.y == curseur_y: # Dans le cas où le curseur désigne une unité ennemie
                                 return unit # Retourne l'unité ennemie comme cible valide
-                        return Unit(curseur_x, curseur_y, 0, 0, 'neutral')
+                        return Unit(curseur_x, curseur_y, 0, 0, 'neutral', None)
                     elif event.key == pygame.K_ESCAPE: # Dans le cas où la touche "Échap" est pressée
                         return None
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
-    def flip_display(self):
-        """Affiche le jeu."""
-        # Affiche la grille
-        self.screen.fill(BLACK)
-        for x in range(0, GRID_SIZE * CELL_SIZE, CELL_SIZE):
-            for y in range(0, GRID_SIZE * CELL_SIZE, CELL_SIZE):
-                pygame.draw.rect(self.screen, WHITE, pygame.Rect(x, y, CELL_SIZE, CELL_SIZE), 1)
-        # Affiche les unités
-        for unit in self.player_units + self.enemy_units:
-            unit.draw(self.screen)
-        competences_disponibles = [c for c in self.competences if c.nom not in self.competences_utilisees]
-        self.afficher_competences(self.screen, competences_disponibles)
-        # Rafraîchit l'écran
-        pygame.display.flip()
-
     # Fonction permettant de s'assurer que le jeu est terminé (toutes les unités d'un camp éliminées)
     def check_game_over(self):
         if not self.player_units: # Si la liste des unités alliées (player_units) est vide
-            print("Défaite ! Toutes vos unités ont été éliminées.")
+            self.interface.ajouter_message("Défaite ! Toutes vos unités ont été éliminées.")
             pygame.quit() # Fermeture de Pygame proprement
             exit() # Arrêt complet du programme
         elif not self.enemy_units: # Si la liste des unités ennemies (enemy_units) est vide
-            print("Victoire ! Tous les ennemis ont été éliminés.")
+            self.interface.ajouter_message("Victoire ! Tous les ennemis ont été éliminés.")
             pygame.quit() # Fermeture de Pygame proprement
             exit() # Arrêt complet du programme
 
@@ -344,6 +334,7 @@ def main():
 
         game.handle_player_turn()
         game.handle_enemy_turn()
+
 
 if __name__ == "__main__":
     main()
