@@ -7,6 +7,7 @@ from unit_ import *
 from personnages import *
 from ui_ import *
 
+LEVEL = 3 #doit etre >1
 
 class Game:
     """
@@ -129,14 +130,56 @@ class Game:
         print(len(self.enemy_units), len(self.player1_units))
         if len(self.enemy_units)!=0 and len(self.player1_units)!=0:
             for enemy in self.enemy_units:
-                self.flip_display(enemy)
-                time.sleep(0.5)
+                #self.flip_display(enemy)
+                #time.sleep(0.5)
     
-                # Déplacement aléatoire
+                # Déplacement aléatoire différencié selon le niveau de l'IA
                 target = random.choice(self.player1_units)
-                dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-                dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-                enemy.move(dx, dy, self.enemy_units, self.player1_units)
+                for _ in range(LEVEL): #plus le niveau de l'IA sera grand, plus il aura le temps de réfléchir
+                    if target.comparateur_faiblesse_resistance(enemy)[1]: #si target a une résistance, il cherche encore
+                       target = random.choice(self.player1_units)
+                    if LEVEL > 3: #si niveau superieur à 3
+                        if not target.comparateur_faiblesse_resistance(enemy)[0]: #si target n'a pas de faiblesse, il cherche encore
+                            target = random.choice(self.player1_units)
+                    #niveau 5/7 où il garde en mémoire un target pour toute la partie, cette fois en estimant le meilleur enemy dans la liste des joueurs?
+                
+                
+                enemy.current_move = 0
+                essai = 0
+                while enemy.current_move < enemy.nombre_deplacements:
+                    if essai : 
+                        if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
+                            break
+                        else:
+                            essai = enemy.move(random.randint(-1, 1), random.randint(-1, 1), self.enemy_units, self.player1_units)
+                            if essai:
+                                dx, dy = 0, 0
+                                if random.randint(0, 1) == 0:
+                                    dx = -1
+                                else:
+                                    dy = -1
+                                    essai = enemy.move(dx, dy, self.enemy_units, self.player1_units)
+                                    if essai :
+                                        break
+                    
+                    dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
+                    dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+                    if abs(dx) - abs(dx) == 0:
+                        if abs(enemy.x - target.x) > abs(enemy.y - target.y):
+                            dy = 0
+                        elif abs(enemy.x - target.x) < abs(enemy.y - target.y):
+                            dx = 0
+                        else:
+                            if random.randint(0, 1) == 0:
+                                dx = 0
+                            else:
+                                dy = 0
+                    #print(dx, dy)
+                    essai = enemy.move(dx, dy, self.enemy_units, self.player1_units)
+                    self.flip_display(enemy)
+                    time.sleep(0.3)
+                    #print(enemy.current_move)
+                enemy.current_move = 0
     
                 # Attaque si possible
                 if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
@@ -155,7 +198,7 @@ class Game:
                 
     
 
-    def flip_display(self, selected_unit):
+    def flip_display(self, selected_unit=False):
         """
         #Affiche le jeu.
         """
@@ -174,7 +217,8 @@ class Game:
             unit.draw(self.screen, units)
             
         #CURSEUR DE sélection
-        pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
+        if selected_unit != False:
+            pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
         
         #print('boop')
             
@@ -193,7 +237,6 @@ class Game:
 
 def main():
     
-    
     #menu type console ui pour paramétrer le combat
     ui=Ui()
     player1_units, enemy_units = ui.run_ui()
@@ -210,9 +253,7 @@ def main():
     # Instanciation du jeu
     game = Game(screen, player1_units, enemy_units)
 
-    running = True
-    
-    
+    running = True    
     
     while running:
         game.handle_player_turn()

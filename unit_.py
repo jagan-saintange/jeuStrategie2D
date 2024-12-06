@@ -111,15 +111,18 @@ class Unit():
                             break
                 if test == 1:
                     print('déplacement impossible !')
+                    return 1
                 else:
                     if test == 2:
                         player.x, self.x = self.x, player.x
                         player.y, self.y = self.y, player.y
                         print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                        return 0
                     else:
                         self.x = try_x
                         self.y = try_y
                     self.current_move += 1
+                    return 0
                     
                     
                         
