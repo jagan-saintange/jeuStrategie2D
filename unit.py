@@ -1,5 +1,3 @@
-
-<<<<<<< HEAD
 import pygame
 import random as rd
 from abc import ABC, abstractmethod
@@ -7,14 +5,12 @@ from personnages import *
 
 
 # Constantes
-GRID_SIZE = 8
-CELL_SIZE = 60
-WIDTH = GRID_SIZE * CELL_SIZE
-=======
+#=======
 GRID_SIZE = 21 # Taille de la grille
 CELL_SIZE = 30 # Taille d'une cellule (case)
 WIDTH = GRID_SIZE * CELL_SIZE + 450 # Augmentation de l'espace pour afficher les compétences
->>>>>>> e0964fe (Interface + corrections de bugs)
+#>>>>>>> e0964fe (Interface + corrections de bugs)
+
 HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 30
 WHITE = (255, 255, 255)
@@ -23,48 +19,17 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
-<<<<<<< HEAD
-
-
 class Unit():
-    """
-    Classe pour représenter une unité.
-
-    ...
-    Attributs
-    ---------
-    x : int
-        La position x de l'unité sur la grille.
-    y : int
-        La position y de l'unité sur la grille.
-    health : int
-        La santé de l'unité.
-    attack_power : int
-        La puissance d'attaque de l'unité.
-    team : str
-        L'équipe de l'unité ('player' ou 'enemy').
-    is_selected : bool
-        Si l'unité est sélectionnée ou non.
-
-    Méthodes
-    --------
-    move(dx, dy)
-        Déplace l'unité de dx, dy.
-    attack(target)
-        Attaque une unité cible.
-    draw(screen)
-        Dessine l'unité sur la grille.
-    """
+    
     
     _instances = []
     
     @classmethod
     def get_instances(cls):
-        # Return a copy of the list of instances
-        return cls._instances.copy()
+        return cls._instances.copy() #return la copie des instances de la classe Unit()
 
 
-    def __init__(self, perso, x, y, health, team):
+    def __init__(self, perso, x, y, health, team, interface):
         """
         Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
 
@@ -86,10 +51,14 @@ class Unit():
         self.x = x
         self.y = y
         self.health = health 
+        self.max_health = health
         #self.type_unite = type_unite
         self.team = str(team)  # 'player' ou 'enemy'
         #print(f'{self} est self.team)
         self.is_selected = False
+        self.effects = [] # Liste des effets appliqués (ex: paralysie, bouclier)
+        self.interface = interface # Référence à l'interface pour pouvoir afficher les actions
+
         
         Unit._instances.append(self) 
         
@@ -101,7 +70,8 @@ class Unit():
             self.y += dy
             #print(dx, dy)
         """
-        #print('déplacement déctecté') 
+        #print('déplacement déctecté')
+        
         if self.current_move < self.nombre_deplacements:
             if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
                 try_x = self.x + dx
@@ -139,60 +109,14 @@ class Unit():
             #print('impossible, il ne vous reste plus de moves')
             pass  
 
-    def attack(self, target):
+    def attack(self, target, dommage = None):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            self.attack_critique_esquive(target) #j'avais inversé self et target avant aaaa
-            #target.HPloss(30, self, crit, choix) #du point de vue du target, il y a perte de pv
-            print('attack done')
-            
-            
-    def filter_draw(self, icon_scaled ,color):
-        # Create a color filter surface
-        filtre = (color[0], color[1], color[2], 70)  # Red color with some transparency
-        filtre_surface = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
-        filtre_surface.fill(filtre)
-        return filtre_surface
-=======
-class Unit:
-    def __init__(self, x, y, health, attack_power, team, type, interface):
-        self.x = x # Position x sur la grille
-        self.y = y # Position y sur la grille
-        self.health = health # Santé de l'unité
-        self.max_health = health
-        self.attack_power = attack_power # Puissance d'attaque
-        self.team = team # Équipe ('player' ou 'enemy')
-        self.type = type # Paramètre pour différencier les unités
-        self.is_selected = False # Indique si l'unité est sélectionnée
-        self.effects = [] # Liste des effets appliqués (ex: paralysie, bouclier)
-        self.interface = interface # Référence à l'interface pour pouvoir afficher les actions
-
-    def move(self, dx, dy):
-        """Déplace l'unité de dx, dy."""
-        immobilise = False
-        for effet in self.effects:
-            if effet["effet"] == "immobilisé":
-                immobilise = True
-                break # On arrête la recherche dès qu'on trouve l'effet
-        if immobilise: # Si l'effet "immobilisé" est actif
-            self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est paralysée et ne peut pas se déplacer.")
-            return # Empêche le déplacement
-        if not (0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE): # On s'assure de rester à l'intérieur de la grille
-            return # Empêche le déplacement
-        if not self.interface.is_passable(self.y + dy, self.x + dx):  # Vérifie la passabilité de la case cible
-            self.interface.ajouter_message(f"Déplacement impossible : la case ({self.x + dx}, {self.y + dy}) est bloquée.")
-            return # Empêche le déplacement
-        self.x += dx
-        self.y += dy
-
-    def attack(self, cible = None, dommage = None):
-        if cible is not None: # Dans le cas où une cible est spécifiée
             if any(effet["effet"] == "désarmé" for effet in self.effects): # Dans le cas où l'unité est désarmée
                 self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est désarmée.")
                 return # Empêche l'attaque
-            if abs(self.x - cible.x) + abs(self.y - cible.y) <= 1: # Dans le cas où la cible est à portée
-                self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) attaque {cible.team} unité à ({cible.x}, {cible.y}) (-{self.attack_power} PdV).")
-                cible.health -= self.attack_power # Inflige des dégâts à la cible
+            self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) attaque {cible.team} unité à ({cible.x}, {cible.y}) (-{self.attack_power} PdV).")
+
         elif dommage is not None: # Si des dégâts directs sont appliqués
             if any(effet["effet"] == "bouclier" for effet in self.effects): # Dans le cas où un bouclier est actif
                 self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est protégée par un bouclier, aucun dégât reçu.")
@@ -202,7 +126,20 @@ class Unit:
         if self.health <= 0: # Dans le cas où l'unité meurt
             self.health = 0
             self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est morte!")
->>>>>>> e0964fe (Interface + corrections de bugs)
+                
+        self.attack_critique_esquive(target) #j'avais inversé self et target avant aaaa
+        #target.HPloss(30, self, crit, choix) #du point de vue du target, il y a perte de pv
+        print('attack done')
+            
+            
+    def filter_draw(self, icon_scaled ,color):
+        # Create a color filter surface
+        filtre = (color[0], color[1], color[2], 70)  # Red color with some transparency
+        filtre_surface = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
+        filtre_surface.fill(filtre)
+        return filtre_surface
+#=======
+
 
     def draw(self, screen, liste_perso):
         """Affiche l'unité sur l'écran."""
@@ -503,8 +440,8 @@ class Archer(Unit):
     """
     Classe qui définit les unités de type archer
     """
-    def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed):
-        Unit.__init__(self, perso, x, y, health, team)
+    def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed, interface):
+        Unit.__init__(self, perso, x, y, health, team, interface)
         #print('\n',perso.de_nature)
         fixed_power = self.nature_effect(perso, attack_power, defense_power, agility_power, speed)
         self.attack_power = fixed_power['attack_power']
@@ -572,8 +509,8 @@ class Aerien(Unit):
     """
     Classe qui définit les unités de type archer
     """
-    def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed):
-        Unit.__init__(self, perso, x, y, health, team)
+    def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed, interface):
+        Unit.__init__(self, perso, x, y, health, team, interface)
         #print('\n',perso.de_nature)
         fixed_power = self.nature_effect(perso, attack_power, defense_power, agility_power, speed)
         self.attack_power = fixed_power['attack_power']
@@ -619,8 +556,8 @@ class Terrien(Unit):
     """
     Classe qui définit les unités de type archer
     """
-    def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed):
-        Unit.__init__(self, perso, x, y, health, team)
+    def __init__(self, perso, x, y, health, team, attack_power, defense_power, agility_power, speed, interface):
+        Unit.__init__(self, perso, x, y, health, team, interface)
         #print('\n',perso.de_nature)
         fixed_power = self.nature_effect(perso, attack_power, defense_power, agility_power, speed)
         self.attack_power = fixed_power['attack_power']
@@ -678,33 +615,32 @@ class Terrien(Unit):
 
 
 ############################################
-############################################
-fighter_freddy = Terrien(perso=Freddy, x=-1, y=-1, health=120, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=30)
-fighter_chica = Aerien(perso=Chica, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=70)
-fighter_bonnie = Terrien(perso=Bonnie, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=40)
-fighter_foxy = Aerien(perso=Foxy, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=5, speed=80)
+fighter_freddy = Terrien(perso=Freddy, x=-1, y=-1, health=120, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=30, interface = None)
+fighter_chica = Aerien(perso=Chica, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=70, interface = None)
+fighter_bonnie = Terrien(perso=Bonnie, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=40, interface = None)
+fighter_foxy = Aerien(perso=Foxy, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=5, speed=80, interface = None)
 
-fighter_eren = Terrien(perso=Eren, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
-fighter_armin = Archer(perso=Armin, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
-fighter_mikasa = Aerien(perso=Mikasa, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
-fighter_levi = Aerien(perso=Levi, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
+fighter_eren = Terrien(perso=Eren, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50, interface = None)
+fighter_armin = Archer(perso=Armin, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75, interface = None)
+fighter_mikasa = Aerien(perso=Mikasa, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60, interface = None)
+fighter_levi = Aerien(perso=Levi, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85, interface = None)
 
-fighter_dre = Terrien(perso=Dre, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_eminem = Archer(perso=Eminem, x=-1, y=-1, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)
-fighter_fifty = Terrien(perso=Fifty, x=-1, y=-1, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
-fighter_snoop = Aerien(perso=Snoop, x=-1, y=-1, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
+fighter_dre = Terrien(perso=Dre, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50, interface = None)
+fighter_eminem = Archer(perso=Eminem, x=-1, y=-1, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60, interface = None)
+fighter_fifty = Terrien(perso=Fifty, x=-1, y=-1, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40, interface = None)
+fighter_snoop = Aerien(perso=Snoop, x=-1, y=-1, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70, interface = None)
 
-fighter_nietzsche = Terrien(perso=Nietzsche,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_marx = Terrien(perso=Marx, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
-fighter_camus = Archer(perso=Camus, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
-fighter_socrates = Terrien(perso=Socrates, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
+fighter_nietzsche = Terrien(perso=Nietzsche,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50, interface = None)
+fighter_marx = Terrien(perso=Marx, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45, interface = None)
+fighter_camus = Archer(perso=Camus, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60, interface = None)
+fighter_socrates = Terrien(perso=Socrates, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50, interface = None)
 
-fighter_trump = Aerien(perso=Trump, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
-fighter_biden = Aerien(perso=Biden, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
-fighter_obama = Aerien(perso=Obama, x=-1, y=-1, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50)
-fighter_bush = Aerien(perso=Bush, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40)
+fighter_trump = Aerien(perso=Trump, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50, interface = None)
+fighter_biden = Aerien(perso=Biden, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45, interface = None)
+fighter_obama = Aerien(perso=Obama, x=-1, y=-1, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50, interface = None)
+fighter_bush = Aerien(perso=Bush, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40, interface = None)
 
-fighter_stop = Terrien(perso=Stop, x=-1, y=-1, health=150, team='undefined', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
-fighter_danger = Terrien(perso=Danger, x=-1, y=-1, health=100, team='undefined', attack_power=3, defense_power=4, agility_power=2, speed=30)
-fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=-1, y=-1, health=100, team='undefined', attack_power=2, defense_power=3, agility_power=3, speed=30)
-fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=-1, y=-1, health=100, team='undefined', attack_power=1, defense_power=2, agility_power=2, speed=20)
+fighter_stop = Terrien(perso=Stop, x=-1, y=-1, health=150, team='undefined', attack_power=0, defense_power=10, agility_power=1, speed=0, interface = None)  # Panneau statique
+fighter_danger = Terrien(perso=Danger, x=-1, y=-1, health=100, team='undefined', attack_power=3, defense_power=4, agility_power=2, speed=30, interface = None)
+fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=-1, y=-1, health=100, team='undefined', attack_power=2, defense_power=3, agility_power=3, speed=30, interface = None)
+fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=-1, y=-1, health=100, team='undefined', attack_power=1, defense_power=2, agility_power=2, speed=20, interface = None)

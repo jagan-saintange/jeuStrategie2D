@@ -16,9 +16,9 @@ from personnages import *
 ##########################################"
 
 
-startposP1 = [(0,0), (1,0), (1,1), (0,1)]
-startposE = [(GRID_SIZE-1,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-2), (GRID_SIZE-1,GRID_SIZE-2)]
-random.shuffle(startposP1)
+startposP1 = [(0,0), (1,0), (1,1), (0,1)] #positions en haut a gauche qu'il va attribuer à chaque unité aléatoirement 
+startposE = [(GRID_SIZE-1,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-2), (GRID_SIZE-1,GRID_SIZE-2)] #positions en bas a droite
+random.shuffle(startposP1) 
 random.shuffle(startposE)
        
 
@@ -151,7 +151,7 @@ class Ui:
                         equipe = 'enemy'    
                         self.selector('enemy', 'hasard')
                 self.show_teams()
-                print('BEEP')
+                #print('BEEP')
             
             elif choice == '4':
                 self.show_teams()
@@ -162,7 +162,7 @@ class Ui:
                 break
             else:
                 print("Invalid choice. Please try again.")
-            print('BEEP')
+            #print('BEEP')
             continuer = (len(self.player1_units) < 4) or (len(self.enemy_units) < 4)
         
         print('choix validé, la partie va commencer. Les équipes sont les suivantes')

@@ -104,16 +104,16 @@ class Interface:
         """
         Affiche une unité sur l'écran.
         """
-        # Sélectionner l'image en fonction de l'équipe et du type d'unité
-        if unit.team == 'player':
-            unit_image = self.player_unit_images[unit.type]
-        else:
-            unit_image = self.enemy_unit_images[unit.type]
+        # # Sélectionner l'image en fonction de l'équipe et du type d'unité
+        # if unit.team == 'player':
+        #     unit_image = self.player_unit_images[unit.type]
+        # else:
+        #     unit_image = self.enemy_unit_images[unit.type]
 
         # Surbrillance lorsque l'unité est sélectionnée
-        if unit.is_selected:
-            pygame.draw.rect(screen, (0, 255, 0), (unit.x * self.a, unit.y * self.a, self.a, self.a), 2)
-        screen.blit(unit_image, (unit.x * self.a, unit.y * self.a)) # Dessin de l'unité
+        # if unit.is_selected:
+        #     pygame.draw.rect(screen, (0, 255, 0), (unit.x * self.a, unit.y * self.a, self.a, self.a), 2)
+        # screen.blit(unit_image, (unit.x * self.a, unit.y * self.a)) # Dessin de l'unité
 
         # Calcul et dessin de la barre de vie
         health_bar_width = self.a // 2
