@@ -30,10 +30,10 @@ class Game:
         """
         self.screen = screen
         self.interface = Interface(self.screen, self)
-        self.player_units = [Unit(0, 0, 100, 10, 'player', 0),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
-                             Unit(1, 0, 100, 10, 'player', 1)]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
-        self.enemy_units = [Unit(6, 6, 100, 10, 'enemy', 0),       # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
-                            Unit(7, 6, 100, 10, 'enemy', 1)]       # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
+        self.player_units = [Unit(0, 0, 100, 10, 'player', 0, interface = self.interface),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
+                             Unit(1, 0, 100, 10, 'player', 1, interface = self.interface)]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
+        self.enemy_units = [Unit(6, 6, 100, 10, 'enemy', 0, interface = self.interface),       # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
+                            Unit(7, 6, 100, 10, 'enemy', 1, interface = self.interface)]       # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
         self.player_row = 5
         self.player_col = 5
         self.messages = []
@@ -67,20 +67,25 @@ class Game:
         """
         Met à jour l'affichage en utilisant l'interface graphique.
         """
-        # Utiliser la méthode de l'interface pour afficher le jeu
+        # Affichage du jeu
         self.interface.draw_interface(self.screen, self.player_row, self.player_col)
 
-        # Afficher les unités (joueurs et ennemis)
+        # Affichage des unités (alliées et ennemies)
         for unit in self.player_units + self.enemy_units:
             self.interface.draw_unit(self.screen, unit)
 
         competences_disponibles = [c for c in self.competences if c.nom not in self.competences_utilisees]
-        self.interface.afficher_competences(self.screen, competences_disponibles)
-        pygame.display.flip() # Mettre à jour l'écran
+        self.interface.afficher_interface(competences_disponibles, self.touches_competences, self.messages)
+        pygame.display.flip() # Mise à jour de l'écran
 
     def handle_player_turn(self):
-        """Tour du joueur"""
+        """Tour du joueur"""        
         for selected_unit in self.player_units:
+            if selected_unit.type == 0:
+                self.interface.ajouter_message("Tour du joueur 0 --------------------------")
+            elif selected_unit.type == 1:
+                self.interface.ajouter_message("Tour du joueur 1 --------------------------")
+            
             has_acted = False # Indicateur pour savoir si l'unité a agi ou non pendant ce tour
             for effet in selected_unit.effects[:]: # Gestion de "Poison" qui s'étend sur 2 tours
                 if effet["effet"] == "poison":
@@ -94,7 +99,7 @@ class Game:
 
             # Étape 1 : Déplacement de l'unité
             self.interface.ajouter_message(f"Déplacez l'unité : ({selected_unit.x}, {selected_unit.y})")
-            max_deplacements = 3
+            max_deplacements = 100
             while max_deplacements > 0:
                 self.flip_display()
                 # Important: cette boucle permet de gérer les événements Pygame
@@ -117,7 +122,7 @@ class Game:
                             dy = 1
                         selected_unit.move(dx, dy)
                         max_deplacements -= 1
-                        self.interface.ajouter_message(f"L'unité a été déplacée à ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
+                        self.interface.ajouter_message(f"L'unité a été déplacée en ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
                         break
 
             # Étape 2 : Sélection et utilisation d'une compétence
@@ -141,6 +146,10 @@ class Game:
     def handle_enemy_turn(self):
         """IA très simple pour les ennemis."""
         for enemy in self.enemy_units:
+            if enemy.type == 0:
+                self.interface.ajouter_message("Tour du joueur 0 --------------------------")
+            elif enemy.type == 1:
+                self.interface.ajouter_message("Tour du joueur 1 --------------------------")
             for effet in enemy.effects[:]:
                 if effet["effet"] == "poison":
                     enemy.attack(dommage = effet["dommages"])  # Applique les dégâts du poison
@@ -158,9 +167,10 @@ class Game:
             dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
             dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
             enemy.move(dx, dy)
+            self.interface.ajouter_message(f"L'unité a été déplacée à ({enemy.x}, {enemy.y}).")
             # Vérifie si l'ennemi est désarmé (ne peut pas attaquer)
             if any(effet["effet"] == "désarmé" for effet in enemy.effects):
-                self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est désarmée et ne peut pas attaquer.")
+                self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est désarmée.")
                 continue # Passe au prochain ennemi
 
             # Attaque si possible
@@ -277,7 +287,7 @@ class Game:
                             elif event.key == pygame.K_DOWN: # Si la flèche du bas (touches fléchées) est pressée, le curseur se déplace en bas
                                 curseur_y = min(GRID_SIZE - 1, curseur_y + 1) # Restreint le curseur aux bordures de la grille (axes des ordonnées)
                             elif event.key == pygame.K_RETURN: # Validation en pressant "Entrée"
-                                return Unit(curseur_x, curseur_y, 0, 0, 'neutral', None) # Dans le cas où aucune unité ennemie n'est trouvée, on retourne une position vide comme cible "neutre"
+                                return Unit(curseur_x, curseur_y, 0, 0, 'neutral', None, interface = self.interface) # Dans le cas où aucune unité ennemie n'est trouvée, on retourne une position vide comme cible "neutre"
 
         while True: # Cas général (compétences sans zone d'effet)
             self.flip_display() # Mise à jour de l'affichage
@@ -300,7 +310,7 @@ class Game:
                         for unit in self.enemy_units: # Parcourt les unités ennemies
                             if unit.x == curseur_x and unit.y == curseur_y: # Dans le cas où le curseur désigne une unité ennemie
                                 return unit # Retourne l'unité ennemie comme cible valide
-                        return Unit(curseur_x, curseur_y, 0, 0, 'neutral', None)
+                        return Unit(curseur_x, curseur_y, 0, 0, 'neutral', None, interface = self.interface)
                     elif event.key == pygame.K_ESCAPE: # Dans le cas où la touche "Échap" est pressée
                         return None
 

@@ -84,7 +84,7 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
                 for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
                         enemy.attack(dommage = self.dommage) # Dégâts infligés (-15 PdV / cible)
-                        interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) subit {self.dommage} PdV à cause de Missile !")
+                        interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) vient d'être frappée par un missile (-{self.dommage} PdV).")
                         if enemy.health <= 0: # Dans le cas où l'unité meurt
                             game.enemy_units.remove(enemy) # Suppression de l'unité
                             interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) a été éliminée !")
@@ -180,10 +180,9 @@ class Vortex(Competence): # Compétence passive : toutes les cibles ennemies, po
         if cible is None or not hasattr(cible, 'x') or not hasattr(cible, 'y'): # On s'assure qu'une case a bien été spécifiée
             interface.ajouter_message("Erreur : Vortex nécessite une case cible valide.") # Message d'erreur si ce n'est pas le cas
             return
-        interface.ajouter_message(f"Vortex activé, regroupement de toutes les unités ennemies sur la case ({cible.x}, {cible.y}) !") # Activation du Vortex
         for unit in game.enemy_units: # On parcourt toutes les unités ennemies présentes sur le plateau
             unit.x, unit.y = cible.x, cible.y # Déplacement de chaque unité sur les coordonnées de la case cible (cible.x, cible.y)
-            interface.ajouter_message(f"{unit.team} unité à ({unit.x}, {unit.y}) a été déplacée sur la case Vortex ({cible.x}, {cible.y}).")
+            interface.ajouter_message(f"Vortex activé: regroupement de toutes les unités ennemies sur la case ({cible.x}, {cible.y}).") # Activation du Vortex
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -192,10 +191,12 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
         super().__init__("Téléportation", portee = -1) # Portée vaut -1 pour indiquer qu'aucune limitation de portée n'est appliquée
 
     def utiliser(self, utilisateur, cible, game, interface): # "Cible" n'est pas utilisé ici, car la téléportation est personnelle
-        interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) prépare une Téléportation!")
         nouvelle_position = game.selectionner_cible(utilisateur) # Méthode du jeu qui permet au joueur de choisir une nouvelle position
 
         if nouvelle_position: # Si une nouvelle position est sélectionnée
+            if not interface.is_passable(nouvelle_position.x, nouvelle_position.y): # On s'assure que la case soit lbre d'accès
+                interface.ajouter_message(f"Impossible d'accéder la case de coordonnées ({nouvelle_position.x}, {nouvelle_position.y}). Téléportation annulée.")
+                return
             utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
             interface.ajouter_message(f"{utilisateur.team} unité téléportée à ({utilisateur.x}, {utilisateur.y})!")
         else: # Si aucune nouvelle position n'est sélectionnée
