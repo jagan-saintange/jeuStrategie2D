@@ -135,7 +135,7 @@ class Unit():
     def attack(self, target):
         """Attaque une unité cible."""
         if abs(self.x - target.x) <= 1 and abs(self.y - target.y) <= 1:
-            target.attack_critique_esquive(self)
+            self.attack_critique_esquive(target) #j'avais inversé self et target avant aaaa
             #target.HPloss(30, self, crit, choix) #du point de vue du target, il y a perte de pv
             print('attack done')
             
@@ -296,12 +296,15 @@ class Unit():
     def attack_critique_esquive(self, target, choix_stats = [False, False, 1]):
         print('===================================\n')    
          
+        LIM = 6 #Très important ! est la limite pour lequel un jet de dé est considéré comme un succès ou un échec, indépendemment du commentaire du dé
+                #on pourrait imaginer le modifier avec la constante LEVEL voire, de donner des lim indépendante pour chaque jet de dé
+                #voir aussi l'equilibrage du jeu, ne pas donner trop de place à l'aléatoire dans un jeu de strat de manière générale même si ici la volonté est de constament bousculer la stratégie du joueur et le forcer à s'adapter
         
         crit = False #on active ou non une comparaison par la stat agilité au lieu de [défense, attaque] classique, le chiffre est le facteur de la stat de l'attaquant
         #normalement est déjà set par défaut comme ça à l'appel de la fonction HPloss
         resD20att = Unit.D20()
         print(resD20att, 'est le res du jet de dé de l attaquant', self.perso.nom)
-        if resD20att[0]>6:
+        if resD20att[0]>LIM:
             if "important" in resD20att[1]:
                 #•print(resD20att[1])
                 crit = True
@@ -326,10 +329,10 @@ class Unit():
             #    raise TypeError('attack_critique_esquive, attaque error')
                 
                 
-        elif resD20att[0]<=6:
+        elif resD20att[0]<=LIM:
             resD20def = Unit.D20()
             print(resD20def, 'est le res du jet de dé du defenseur', target.perso.nom)
-            if resD20def[0]>6:
+            if resD20def[0]>LIM:
                 if ('important' in resD20att[1]) or ('important' in resD20def[1]):
                     if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power):
                        choix_stats = [False, True, 2]

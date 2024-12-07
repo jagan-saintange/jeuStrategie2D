@@ -5,7 +5,9 @@ import time
 
 from unit_ import *
 from personnages import *
+from ui_ import *
 
+LEVEL = 3 #doit etre >1
 
 class Game:
     """
@@ -16,13 +18,13 @@ class Game:
     ---------
     screen: pygame.Surface
         La surface de la fenêtre du jeu.
-    player_units : list[Unit]
+    player1_units : list[Unit]
         La liste des unités du joueur.
     enemy_units : list[Unit]
         La liste des unités de l'adversaire.
     """
 
-    def __init__(self, screen):
+    def __init__(self, screen, player1_units, enemy_units):
         """
         Construit le jeu avec la surface de la fenêtre.
 
@@ -34,20 +36,13 @@ class Game:
 
 
         self.screen = screen
-        self.player_units = [fighter_freddy, 
-                             fighter_chica, 
-                             fighter_bonnie, 
-                             fighter_foxy
-                             ]
-
-        self.enemy_units = [fighter_eren,
-                            fighter_armin,
-                            fighter_mikasa,
-                            fighter_levi
-                            ]
-
-
-
+        self.player1_units = player1_units
+        self.enemy_units = enemy_units 
+        
+        startposP1 = [(0,0), (1,0), (1,1), (0,1)]
+        startposE = [(GRID_SIZE-1,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-2), (GRID_SIZE-2,GRID_SIZE-1)]
+        random.shuffle(startposP1)
+        random.shuffle(startposE)
 
 #----------------------------------------
 
@@ -56,8 +51,8 @@ class Game:
         """
         #Tour du joueur
         """
-        if len(self.enemy_units)!=0 and len(self.player_units)!=0:
-            for selected_unit in self.player_units:
+        if len(self.enemy_units)!=0 and len(self.player1_units)!=0:
+            for selected_unit in self.player1_units:
     
                 # Tant que l'unité n'a pas terminé son tour
                 has_acted = False
@@ -99,7 +94,7 @@ class Game:
                             
                             
                             if dx != 0 or dy != 0:
-                                selected_unit.move(dx, dy, self.player_units, self.enemy_units)
+                                selected_unit.move(dx, dy, self.player1_units, self.enemy_units)
                                 print(f'il vous reste {selected_unit.nombre_deplacements - selected_unit.current_move} déplacements, pour cette unité')
                                 
                                 self.flip_display(selected_unit)
@@ -114,9 +109,9 @@ class Game:
                                             if enemies.health <= 0:
                                                 self.enemy_units.remove(enemies)
                                                 #print('ENEMIES A ETE REMOVED')
-                                        for units in self.player_units:
+                                        for units in self.player1_units:
                                             if units.health <= 0:
-                                                self.player_units.remove(units)
+                                                self.player1_units.remove(units)
                                                 #print('UNITS A ETE REMOVED')
                                         self.flip_display(selected_unit)
     
@@ -132,17 +127,59 @@ class Game:
         #IA très simple pour les ennemis.
         """
         
-        print(len(self.enemy_units), len(self.player_units))
-        if len(self.enemy_units)!=0 and len(self.player_units)!=0:
+        print(len(self.enemy_units), len(self.player1_units))
+        if len(self.enemy_units)!=0 and len(self.player1_units)!=0:
             for enemy in self.enemy_units:
-                self.flip_display(enemy)
-                time.sleep(0.5)
+                #self.flip_display(enemy)
+                #time.sleep(0.5)
     
-                # Déplacement aléatoire
-                target = random.choice(self.player_units)
-                dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-                dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-                enemy.move(dx, dy, self.enemy_units, self.player_units)
+                # Déplacement aléatoire différencié selon le niveau de l'IA
+                target = random.choice(self.player1_units)
+                for _ in range(LEVEL): #plus le niveau de l'IA sera grand, plus il aura le temps de réfléchir
+                    if target.comparateur_faiblesse_resistance(enemy)[1]: #si target a une résistance, il cherche encore
+                       target = random.choice(self.player1_units)
+                    if LEVEL > 3: #si niveau superieur à 3
+                        if not target.comparateur_faiblesse_resistance(enemy)[0]: #si target n'a pas de faiblesse, il cherche encore
+                            target = random.choice(self.player1_units)
+                    #niveau 5/7 où il garde en mémoire un target pour toute la partie, cette fois en estimant le meilleur enemy dans la liste des joueurs?
+                
+                
+                enemy.current_move = 0
+                essai = 0
+                while enemy.current_move < enemy.nombre_deplacements:
+                    if essai : 
+                        if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
+                            break
+                        else:
+                            essai = enemy.move(random.randint(-1, 1), random.randint(-1, 1), self.enemy_units, self.player1_units)
+                            if essai:
+                                dx, dy = 0, 0
+                                if random.randint(0, 1) == 0:
+                                    dx = -1
+                                else:
+                                    dy = -1
+                                    essai = enemy.move(dx, dy, self.enemy_units, self.player1_units)
+                                    if essai :
+                                        break
+                    
+                    dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
+                    dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+                    if abs(dx) - abs(dx) == 0:
+                        if abs(enemy.x - target.x) > abs(enemy.y - target.y):
+                            dy = 0
+                        elif abs(enemy.x - target.x) < abs(enemy.y - target.y):
+                            dx = 0
+                        else:
+                            if random.randint(0, 1) == 0:
+                                dx = 0
+                            else:
+                                dy = 0
+                    #print(dx, dy)
+                    essai = enemy.move(dx, dy, self.enemy_units, self.player1_units)
+                    self.flip_display(enemy)
+                    time.sleep(0.3)
+                    #print(enemy.current_move)
+                enemy.current_move = 0
     
                 # Attaque si possible
                 if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
@@ -151,9 +188,9 @@ class Game:
                         if enemies.health <= 0:
                             self.enemy_units.remove(enemies)
                             print('ENEMIES A ETE REMOVED')
-                    for units in self.player_units:
+                    for units in self.player1_units:
                         if units.health <= 0:
-                            self.player_units.remove(units)
+                            self.player1_units.remove(units)
                             print('UNITS A ETE REMOVED')
                 
                 
@@ -161,7 +198,7 @@ class Game:
                 
     
 
-    def flip_display(self, selected_unit):
+    def flip_display(self, selected_unit=False):
         """
         #Affiche le jeu.
         """
@@ -174,15 +211,16 @@ class Game:
                 pygame.draw.rect(self.screen, WHITE, rect, 1)
 
        
-        units = self.player_units + self.enemy_units
+        units = self.player1_units + self.enemy_units
         # Affiche les unités
         for unit in units:
             unit.draw(self.screen, units)
             
         #CURSEUR DE sélection
-        pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
+        if selected_unit != False:
+            pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
         
-        print('boop')
+        #print('boop')
             
             
 
@@ -190,7 +228,7 @@ class Game:
         pygame.display.flip()
         
     def test_fin(self):
-        if len(self.player_units) == 0 or len(self.enemy_units) == 0:
+        if len(self.player1_units) == 0 or len(self.enemy_units) == 0:
             return False
         else:
             return True
@@ -198,6 +236,12 @@ class Game:
     
 
 def main():
+    
+    #menu type console ui pour paramétrer le combat
+    ui=Ui()
+    player1_units, enemy_units = ui.run_ui()
+    print('chargement du jeu...')
+    time.sleep(1)
 
     # Initialisation de Pygame
     pygame.init()
@@ -207,15 +251,16 @@ def main():
     pygame.display.set_caption("Mon jeu de stratégie")
 
     # Instanciation du jeu
-    game = Game(screen)
+    game = Game(screen, player1_units, enemy_units)
 
-    running = True
+    running = True    
+    
     while running:
         game.handle_player_turn()
         running = game.test_fin()
         game.handle_enemy_turn()
         running = game.test_fin()
-        if len(game.player_units) == 0 or len(game.enemy_units) == 0: 
+        if len(game.player1_units) == 0 or len(game.enemy_units) == 0: 
             running = False
             
     print('FIN DU JEU, vous pouvez quitter')
