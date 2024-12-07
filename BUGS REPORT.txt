@@ -1,0 +1,3 @@
+1. in game.py, in main(), "running" tests are not breaking the while loop at every case -> fix placements of running tests
+
+2. in game.py, in game.handle_enemy_turn(), when moving is impossible for enemy ai (print -> "déplacement impossible"), it teleports the enemy somewhere else. -> check the conditions to move for enemy

@@ -9,7 +9,7 @@ Created on Thu Dec  5 23:28:53 2024
 import pygame
 import random
 
-from unit_ import *
+from unit import *
 from personnages import *
 
 ##########################################"

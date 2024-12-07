@@ -3,9 +3,9 @@ import random
 import sys
 import time
 
-from unit_ import *
+from unit import *
 from personnages import *
-from ui_ import *
+from ui import *
 
 LEVEL = 3 #doit etre >1 ordre de grandeur des facultés débloquées : 1-3, mettre >3 fera réfléchir l'IA plus longtemps encore tho
 
@@ -115,10 +115,14 @@ class Game:
                                                 self.player1_units.remove(units)
                                                 #print('UNITS A ETE REMOVED')
                                         self.flip_display(selected_unit)
+                                        
     
                                 has_acted = True
                                 selected_unit.is_selected = False
                                 self.flip_display(selected_unit)
+                                running = self.test_fin()
+                                if not running:
+                                    break
                                 
                             
                             
@@ -159,15 +163,12 @@ class Game:
                         if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                             break #si l'ennemi est portée, plus besoin de se déplacer
                         else:
-                            for _ in range(5):
-                                essai = enemy.move(random.randint(-1, 1), random.randint(-1, 1), self.enemy_units, self.player1_units) #mouvement aléatoire pour essayer de se débloquer
-                            if essai: #si ça ne marche tj pas
-                                dx, dy = 0, 0
-                                if random.randint(0, 1) == 0:
-                                    dx = -1
-                                else:
-                                    dy = -1
-                                essai = enemy.move(dx, dy, self.enemy_units, self.player1_units) #on essaie de reculer
+                            for _ in range(LEVEL):
+                                dx, dy =0, 0
+                                while abs(dx+ dy)!=1:
+                                    dx = random.randint(-1, 1)
+                                    dy = random.randint(-1, 1)
+                                essai = enemy.move(dx, dy, self.enemy_units, self.player1_units) #mouvement aléatoire pour essayer de se débloquer
                                 if essai :
                                     break #si rien ne marche on ne bloque pas la partie
                 
@@ -271,10 +272,14 @@ def main():
     while running:
         game.handle_player_turn()
         running = game.test_fin()
+        if not running:
+            break
         game.handle_enemy_turn()
         running = game.test_fin()
-        if len(game.player1_units) == 0 or len(game.enemy_units) == 0: 
-            running = False
+        if not running:
+            break
+        #if len(game.player1_units) == 0 or len(game.enemy_units) == 0: 
+        #    running = False
             
     print('FIN DU JEU, vous pouvez quitter')
     fin = True
