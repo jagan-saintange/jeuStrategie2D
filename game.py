@@ -115,14 +115,16 @@ class Game:
                                                 self.player1_units.remove(units)
                                                 #print('UNITS A ETE REMOVED')
                                         self.flip_display(selected_unit)
-                                        
+                                        #running = self.test_fin()
+                                        #if not running:
+                                        #    break
     
                                 has_acted = True
                                 selected_unit.is_selected = False
                                 self.flip_display(selected_unit)
-                                running = self.test_fin()
-                                if not running:
-                                    break
+                running = self.test_fin()
+                if not running:
+                    break
                                 
                             
                             
@@ -163,18 +165,20 @@ class Game:
                         if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
                             break #si l'ennemi est portée, plus besoin de se déplacer
                         else:
-                            for _ in range(LEVEL):
-                                dx, dy =0, 0
-                                while abs(dx+ dy)!=1:
-                                    dx = random.randint(-1, 1)
-                                    dy = random.randint(-1, 1)
-                                essai = enemy.move(dx, dy, self.enemy_units, self.player1_units) #mouvement aléatoire pour essayer de se débloquer
-                                if essai :
-                                    break #si rien ne marche on ne bloque pas la partie
+                            #for _ in range(LEVEL):
+                            dx, dy =0, 0
+                            while abs(dx+ dy)!=1:
+                                dx = random.randint(-1, 1)
+                                dy = random.randint(-1, 1)
+                            print('boop')
+                            essai = enemy.move(dx, dy, self.enemy_units, self.player1_units) #mouvement aléatoire pour essayer de se débloquer
+                            if essai :
+                                break #si rien ne marche on ne bloque pas la partie
+                                print('bip')
                 
                     else:   # l'algo appliquera ce else en premier      
                     
-                        #on input l'ess
+                        
                         dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
                         dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
                         if abs(dx) - abs(dx) == 0:
