@@ -12,6 +12,139 @@ class Competence(ABC):
     @abstractmethod
     def utiliser(self, utilisateur, cible, game): # Méthode abstraite à implémenter dans chaque sous-classe pour garantir la cohésion
         raise NotImplementedError("Cette méthode doit être implémentée dans les sous-classes.")
+    
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------#
+# FONCTIONS RELATIVES AUX COMPÉTENCES:
+
+    # Fonction permettant à l'utilisateur de sélectionner une compétence parmi celles qu'il n'a pas encore utilisé
+    @staticmethod
+    def selectionner_competence(interface, screen, competences, touches_competences, competences_utilisees):
+        competences_disponibles = [c for c in competences if c.nom not in competences_utilisees]
+        interface.afficher_competences(screen, competences_disponibles) # Méthode qui met à jour l'affichage des compétences
+        while True: # Boucle principale permettant de gérer la sélection du joueur
+            for event in pygame.event.get(): # On parcourt les événements en attente
+                if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
+                    pygame.quit() # Fermeture de Pygame proprement
+                    exit() # Arrêt complet du programme
+                elif event.type == pygame.KEYDOWN: # Dans le cas où l'utilisateur presse une touche
+                    for c in competences_disponibles: # On parcourt les compétences disponibles (celles affichées à l'écran)
+                        if event.key == touches_competences.get(c.nom): # On s'assure que la touche pressée correspond à celle associée à la compétence
+                            return c # Retourne la compétence sélectionnée pour qu'elle puisse être utilisée
+        return None
+    
+    # Fonction permettant à l'utilisateur d'utiliser une compétence sur une cible (ou une position s'il s'agit des compétences Vortex et Téléportation)
+    @staticmethod
+    def utiliser_competence(utilisateur, cible, competence, game, interface):
+        if competence and utilisateur and cible: # Dans le cas où la compétence peut être utilisée
+            competence.utiliser(utilisateur, cible, game, interface) # On l'utilise
+            if isinstance(cible, Unit) and cible.team == "enemy" and cible.health <= 0: # Dans le cas où la cible est une unité ennemie ET qu'elle n'a plus de PdV
+                if cible in game.enemy_units:
+                    game.enemy_units.remove(cible) # Suppression de la cible de la liste des ennemis
+                    interface.ajouter_message(f"L'unité ennemie située aux coordonnées ({cible.x}, {cible.y}) a été éliminée.")
+        else:
+            interface.ajouter_message("Impossible d'utiliser la compétence. Vérifiez l'utilisateur, la cible et la compétence.")
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------#
+# FONCTION RELATIVE AU CURSEUR (SÉLÉCTION DE CIBLE ET/OU DE CASE):
+
+    @staticmethod
+    def selectionner_cible(utilisateur, game, competence = None):
+        curseur_x, curseur_y = utilisateur.x, utilisateur.y # Coordonnées du curseur initialisées avec les coordonnées actuelles de l'utilisateur
+        if competence:
+            if competence.nom in ["Soin", "Bouclier", "Téléportation"]: # S'il s'agit des compétences "Bouclier", "Soin" ou "Téléportation", pas de sélection extérieure
+                return utilisateur
+            elif competence.nom == "Missile": # Sélection d'une ligne de 5 cases (horizontale ou verticale) pour la compétence "Missile"
+                direction = None # Variable dans laquelle on stocke la direction choisie par l'utilisateur
+                curseur_positions = [] # Liste contenant les coordonnées (x, y) des 5 cases du curseur
+                while True: # Boucle qui reste active jusqu'à ce que l'utilisateur choisisse une direction
+                    game.flip_display() # Mise à jour de l'affichage
+                    if direction: # Dans le cas où une direction (haut, bas, gauche, droite) a été choisie
+                        for x, y in curseur_positions:
+                            pygame.draw.rect(game.screen, (255, 0, 0), (x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Dessin du curseur (en rouge) qui représente la zone d'effet
+                    else: # Dans le cas où aucune direction n'a été choisie
+                        pygame.draw.rect(game.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Dessin d'un curseur (en vert) autour de l'utilisateur
+                    pygame.display.flip() # Mise à jour de l'affichaget
+                    for event in pygame.event.get(): # Gestion des évènements
+                        if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
+                            pygame.quit() # Fermeture de Pygame proprement
+                            exit() # Arrêt complet du programme
+                        elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
+                            if event.key == pygame.K_UP: # Si la flèche du haut (touches fléchées) est pressée
+                                direction = 'haut'
+                            elif event.key == pygame.K_DOWN: # Si la flèche du bas (touches fléchées) est pressée
+                                direction = 'bas'
+                            elif event.key == pygame.K_LEFT: # Si la flèche gauche (touches fléchées) est pressée
+                                direction = 'gauche'
+                            elif event.key == pygame.K_RIGHT: # Si la flèche droite (touches fléchées) est pressée
+                                direction = 'droite'
+                            elif event.key == pygame.K_RETURN and direction: # Validation en pressant "Entrée"
+                                return direction
+                            
+                            if direction: # Si l'utilisateur a choisi une direction
+                                curseur_positions = [] # Réinitialisation de la liste contenant les coordonnées des cases du curseur
+                                dx, dy = 0, 0 # Initialisation des variables de déplacement pour les coordonnées (x, y). Elles détermineront la direction à suivre.
+                                if direction == 'haut': # Si la direction choisie est "haut"
+                                    dx, dy = 0, -1 # Déplacement vertical du curseur vers le haut (y diminue de 1 à chaque étape)
+                                elif direction == 'bas': # Si la direction choisie est "bas"
+                                    dx, dy = 0, 1 # Déplacement vertical du curseur vers le bas (y augmente de 1 à chaque étape)
+                                elif direction == 'gauche': # Si la direction choisie est "gauche"
+                                    dx, dy = -1, 0 # Déplacement horizontal du curseur vers la gauche (x diminue de 1 à chaque étape)
+                                elif direction == 'droite': # Si la direction choisie est "droite"
+                                    dx, dy = 1, 0 # Déplacement horizontal du curseur vers la droite (x augmente de 1 à chaque étape)
+                                for i in range(1, competence.portee + 1): # Parcourt chaque "étape" le long de la direction choisie, en commençant à 1 (case adjacente à l'utilisateur) jusqu'à la portée maximale de la compétence (inclus)
+                                    new_x = utilisateur.x + dx * i # Calcul de la nouvelle coordonnée x en partant de la position actuelle de l'utilisateur (utilisateur.x), et en se déplaçant de 'i' étapes dans la direction horizontale déterminée par 'dx'
+                                    new_y = utilisateur.y + dy * i # Calcul de la nouvelle coordonnée y en partant de la position actuelle de l'utilisateur (utilisateur.y), et en se déplaçant de 'i' étapes dans la direction verticale déterminée par 'dy'
+                                    if 0 <= new_x < GRID_SIZE and 0 <= new_y < GRID_SIZE: # On s'assure que les coordonnées calculées (new_x et new_y) ne dépassent pas les bordures de la grille
+                                        curseur_positions.append((new_x, new_y)) # Ajout des coordonnées à la liste des cases du curseur
+
+            elif competence.nom == "Pluie de projectiles": # Sélection d'une matrice 3x3 pour la compétence "Pluie de projectiles"
+                while True: # Boucle qui reste active jusqu'à ce que l'utilisateur choisisse une case (centre de la matrice)
+                    game.flip_display() # Mise à jour de l'affichage
+                    for dx in range(-1, 2): # Parcourt les déplacements horizontaux par rapport à la case centrale
+                        for dy in range(-1, 2): # Parcourt les déplacements verticaux par rapport à la case centrale
+                            if 0 <= curseur_x + dx < GRID_SIZE and 0 <= curseur_y + dy < GRID_SIZE: # On s'assure que la case centrale (calculée en combinant ses coordonnées avec les déplacements dx et dy) ne dépassent pas les bordures de la grille
+                                pygame.draw.rect(game.screen, (128, 0, 128), ((curseur_x + dx) * CELL_SIZE, (curseur_y + dy) * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Dessin d'un carré (matrice 3x3) qui représente la zone d'effet
+                    pygame.display.flip() # Affichage des évènements à l'écran
+                    for event in pygame.event.get(): # Gestion des évènements
+                        if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
+                            pygame.quit() # Fermeture de Pygame proprement
+                            exit() # Arrêt complet du programme
+                        elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
+                            if event.key == pygame.K_LEFT: # Si la flèche gauche (touches fléchées) est pressée, le curseur se déplace à gauche
+                                curseur_x = max(0, curseur_x - 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
+                            elif event.key == pygame.K_RIGHT: # Si la flèche droite (touches fléchées) est pressée, le curseur se déplace à droite
+                                curseur_x = min(GRID_SIZE - 1, curseur_x + 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
+                            elif event.key == pygame.K_UP: # Si la flèche du haut (touches fléchées) est pressée, le curseur se déplace en haut
+                                curseur_y = max(0, curseur_y - 1) # Restreint le curseur aux bordures de la grille (axes des ordonnées)
+                            elif event.key == pygame.K_DOWN: # Si la flèche du bas (touches fléchées) est pressée, le curseur se déplace en bas
+                                curseur_y = min(GRID_SIZE - 1, curseur_y + 1) # Restreint le curseur aux bordures de la grille (axes des ordonnées)
+                            elif event.key == pygame.K_RETURN: # Validation en pressant "Entrée"
+                                return Unit(Neutral, curseur_x, curseur_y, 0, 'neutral', game.interface) # Dans le cas où aucune unité ennemie n'est trouvée, on retourne une position vide comme cible "neutre"
+
+        while True: # Cas général (compétences sans zone d'effet)
+            game.flip_display() # Mise à jour de l'affichage
+            pygame.draw.rect(game.screen, GREEN, (curseur_x * CELL_SIZE, curseur_y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 2) # Dessin du curseur habituel (en vert)
+            pygame.display.flip() # Affichage des évènements à l'écran
+            for event in pygame.event.get(): # Gestion des évènements
+                if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
+                    pygame.quit() # Fermeture de Pygame proprement
+                    exit() # Arrêt complet du programme
+                elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
+                    if event.key == pygame.K_LEFT: # Si la flèche gauche (touches fléchées) est pressée, le curseur se déplace à gauche
+                        curseur_x = max(0, curseur_x - 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
+                    elif event.key == pygame.K_RIGHT: # Si la flèche droite (touches fléchées) est pressée, le curseur se déplace à droite
+                        curseur_x = min(GRID_SIZE - 1, curseur_x + 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
+                    elif event.key == pygame.K_UP: # Si la flèche du haut (touches fléchées) est pressée, le curseur se déplace en haut
+                        curseur_y = max(0, curseur_y - 1) # Restreint le curseur aux bordures de la grille (axes des ordonnées)
+                    elif event.key == pygame.K_DOWN: # Si la flèche du bas (touches fléchées) est pressée, le curseur se déplace en bas
+                        curseur_y = min(GRID_SIZE - 1, curseur_y + 1) # Restreint le curseur aux bordures de la grille (axes des ordonnées)
+                    elif event.key == pygame.K_RETURN: # Valide en pressant "Entrée"
+                        for unit in game.enemy_units: # Parcourt les unités ennemies
+                            if unit.x == curseur_x and unit.y == curseur_y: # Dans le cas où le curseur désigne une unité ennemie
+                                return unit # Retourne l'unité ennemie comme cible valide
+                        return Unit(Neutral, curseur_x, curseur_y, 0, 'neutral', game.interface)
+                    elif event.key == pygame.K_ESCAPE: # Dans le cas où la touche "Échap" est pressée
+                        return None
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -191,7 +324,7 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
         super().__init__("Téléportation", portee = -1) # Portée vaut -1 pour indiquer qu'aucune limitation de portée n'est appliquée
 
     def utiliser(self, utilisateur, cible, game, interface): # "Cible" n'est pas utilisé ici, car la téléportation est personnelle
-        nouvelle_position = game.selectionner_cible(utilisateur) # Méthode du jeu qui permet au joueur de choisir une nouvelle position
+        nouvelle_position = Competence.selectionner_cible(utilisateur, game) # Méthode du jeu qui permet au joueur de choisir une nouvelle position
 
         if nouvelle_position: # Si une nouvelle position est sélectionnée
             if not interface.is_passable(nouvelle_position.x, nouvelle_position.y): # On s'assure que la case soit lbre d'accès

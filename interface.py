@@ -49,11 +49,17 @@ class Interface:
                 for col in range(x_min, x_max):
                     self.passability_grid[row][col] = False
 
-        blocage(8, 13, 0, 7)
-        blocage(9, 12, 7, 14)
-        blocage(9, 12, 15, 18)
-        blocage(0, 3, 8, 10)
-        blocage(4, 5, 4, 5)
+        blocage(8, 13, 0, 7) # Bassin
+        blocage(9, 12, 7, 14) # 2ème partie de la cascade
+        blocage(9, 12, 15, 18) # 3ème parite de la cascade
+        blocage(9, 12, 19, 21) # 4ème parite de la cascade
+        blocage(0, 2, 8, 9) # 1er muret
+        blocage(6, 9, 8, 10) # 2ème muret
+        blocage(12, 15, 8, 10) # 3ème muret
+        blocage(18, 21, 8, 10) # 4ème muret
+        blocage(4, 5, 4, 5) # Feu de camp (gauche)
+        blocage(16, 17, 4, 5) # Feu de camp (droite)
+        blocage(19, 20, 12, 13) # Bûches
 
     def is_passable(self, row, col):
         if 0 <= row < self.y and 0 <= col < self.x:
