@@ -490,6 +490,7 @@ def main():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Mon jeu de stratégie")
 
+
     # Instanciation du jeu
     game = Game(screen, player1_units, enemy_units)
 
