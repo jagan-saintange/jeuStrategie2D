@@ -6,17 +6,18 @@ from abc import ABC, abstractmethod
 
 #Banques icones
 
-assets_path = {
-    'Freddy' : ".\\assets\\freddy.png",    
-    'Chica' : ".\\assets\\chica.jpg",
-    'Bonnie' : ".\\assets\\bonnie.jpg", 
-    'Foxy' : ".\\assets\\foxy.jpg",
-    'Eren' : ".\\assets\\eren.jpg",
-    'Armin' : ".\\assets\\armin.jpg",
-    'Mikasa' : ".\\assets\\mikasa.jpg",
-    'Levi' : ".\\assets\\levi.jpg",
-    }
-
+assets_path = {'Mario' : ".\\assets\\mario.png",    
+               'Luigi' : ".\\assets\\luigi.png",
+               'Peach' : ".\\assets\\peach.png", 
+               'Yoshi' : ".\\assets\\yoshi.png",
+               'Batman' : ".\\assets\\batman.png",
+               'Spiderman' : ".\\assets\\spiderman.png",
+               'Captain' : ".\\assets\\captainamerica.png",
+               'Deadpool' : ".\\assets\\deadpool.png",
+               'Pikachu' : ".\\assets\\pikachu.png",
+               'Bulbizarre' : ".\\assets\\bulbizarre.png",
+               'Charmander' : ".\\assets\\charmander.png",
+               'Carapuce' : ".\\assets\\carapuce.png",}
 
 #######################################################
 
@@ -45,10 +46,7 @@ nature_carac = {#'None': {'attack_power_coeff' : 0., 'defense_power_coeff' : 0.,
         'calme': {'attack_power_coeff': 0.0, 'defense_power_coeff': 0.2, 'agility_power_coeff': 0.1, 'speed_coeff': 0.1},
         'tenace': {'attack_power_coeff': 0.2, 'defense_power_coeff': 0.4, 'agility_power_coeff': -0.1, 'speed_coeff': 0.0},
         'démoniaque': {'attack_power_coeff': 0.5, 'defense_power_coeff': 0.4, 'agility_power_coeff': 0.0, 'speed_coeff': -0.3},
-        'divin': {'attack_power_coeff': 1., 'defense_power_coeff': 1., 'agility_power_coeff': 1., 'speed_coeff': 1.},
-}
-
-
+        'divin': {'attack_power_coeff': 1., 'defense_power_coeff': 1., 'agility_power_coeff': 1., 'speed_coeff': 1.},}
 
 class Personnage: #if perso.univers = le selected alors on passe toutes les unités en player1
     
@@ -67,11 +65,9 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
         
         Personnage._instances.append(self) #on récup à chaque init le nom du nouveau objet Personnage
 
-          
-
     def icon_set(self, icon):
         if icon != None:
-            icon_img = pygame.image.load(icon)
+            icon_img = pygame.transform.scale(pygame.image.load(icon))
             
         elif self.nom in assets_path:
             icon_img = assets_path[self.nom]
@@ -85,12 +81,10 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
     @property
     def de_type(self):
         return self.__de_type
-    
        
     @property
     def de_nature(self):
         return self.__de_nature
-    
         
     @de_type.setter
     def de_type(self, value):
@@ -98,19 +92,16 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
             print(value)
             raise TypeError("le type doit être 'feu', 'eau' ou 'plante'")
         self.__de_type = value
-     
     
     @de_nature.setter
     def de_nature(self, value):
         self.__de_nature = value
         #print(f'set nature est {self.__de_nature}')
     
-    
     def __nature_chooser(self): #est une méthode privée
         de_nature = [keys for keys in nature_carac.keys()][rd.randint(0, len(nature_carac.keys())-1)]
         self.de_nature = de_nature #est un attribut privé
         print(f'{self.nom} est de nature {self.de_nature}')
-
     
     @classmethod
     def get_instances(cls):
@@ -121,28 +112,26 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
     #aussi in case of developpement de futur d'effets différents pour les conséquences de la nature en fonction des classes
     def nature_effect(self):
         pass
-    
-    
 
 #####################################
 
 #Personnages par univers
 Neutral = Personnage('Neutral', 'Generic', 'plante')
 
-Freddy = Personnage('Freddy', 'FNAF', 'plante')
-Chica = Personnage('Chica', 'FNAF', 'feu')
-Bonnie = Personnage('Bonnie', 'FNAF', 'eau')
-Foxy = Personnage('Foxy', 'FNAF', 'feu')
+Mario = Personnage('Mario', 'SNK', 'feu')
+Luigi = Personnage('Luigi', 'SNK', 'eau')
+Peach = Personnage('Peach', 'SNK', 'feu')
+Yoshi = Personnage('Yoshi', 'SNK', 'eau')
 
-Eren = Personnage('Eren', 'SNK', 'feu')
-Armin = Personnage('Armin', 'SNK', 'eau')
-Mikasa = Personnage('Mikasa', 'SNK', 'feu')
-Levi = Personnage('Levi', 'SNK', 'eau')
+Batman = Personnage('Batman', 'FNAF', 'plante')
+Spiderman = Personnage('Spiderman', 'FNAF', 'feu')
+Captain = Personnage('Captain', 'FNAF', 'eau')
+Deadpool = Personnage('Deadpool', 'FNAF', 'feu')
 
-Dre = Personnage('Snoop', 'WestCoast', 'eau')
-Eminem = Personnage('Eminem', 'WestCoast', 'feu')
-Fifty = Personnage('Fifty', 'WestCoast', 'eau')
-Snoop = Personnage('Snoop', 'WestCoast', 'plante')
+Pikachu = Personnage('Pikachu', 'WestCoast', 'eau')
+Charmander = Personnage('Charmander', 'WestCoast', 'feu')
+Carapuce = Personnage('Carapuce', 'WestCoast', 'eau')
+Bulbizarre = Personnage('Bulbizarre', 'WestCoast', 'plante')
 
 Nietzsche = Personnage('Nietzsche', 'philosophe', 'eau')
 Marx = Personnage('Marx', 'philosophe', 'feu')
@@ -159,13 +148,8 @@ Danger = Personnage('Danger', 'Panneaux de signalisation', 'plante')
 tourner_a_droite = Personnage('tourner_a_droite', 'Panneaux de signalisation', 'plante')
 aire_de_repos = Personnage('aire_de_repos', 'Panneaux de signalisation', 'plante')
 
-
 perso1 = Personnage('number1', 'notre jeu', 'feu')
 perso2 = Personnage('number2', 'notre jeu', 'eau')
 perso3 = Personnage('number3', 'notre jeu', 'plante')
 
 #print(Personnage.get_instances())
-
-
-
-

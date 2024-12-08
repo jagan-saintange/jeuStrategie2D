@@ -10,40 +10,12 @@ from interface import Interface
 
 LEVEL = 3 #doit etre > 1 ordre de grandeur des facultés débloquées : 1-3, mettre > 3 fera réfléchir l'IA plus longtemps encore tho
 
-class Game:
-    """
-    Classe pour représenter le jeu.
-
-    ...
-    Attributs
-    ---------
-    screen: pygame.Surface
-        La surface de la fenêtre du jeu.
-    player_units : list[Unit]
-        La liste des unités du joueur.
-    enemy_units : list[Unit]
-        La liste des unités de l'adversaire.
-    """
-
+class Game: # Classe pour représenter le jeu
     def __init__(self, screen, player_units, enemy_units):
-        """
-        Construit le jeu avec la surface de la fenêtre.
-
-        Paramètres
-        ----------
-        screen : pygame.Surface
-            La surface de la fenêtre du jeu.
-        """
         self.screen = screen
         self.interface = Interface(self.screen, self)
-        #self.player_units = [Unit(0, 0, 100, 10, 'player', 0, interface = self.interface),     # Position (x = 0, y = 0), PdV intial = 100, puissance d'attaque = 10
-        #                     Unit(1, 0, 100, 10, 'player', 1, interface = self.interface)]     # Position (x = 1, y = 0), PdV intial = 100, puissance d'attaque = 10
-        #self.enemy_units = [Unit(6, 6, 100, 10, 'enemy', 0, interface = self.interface),       # Position (x = 6, y = 6), PdV intial = 100, puissance d'attaque = 8
-        #                    Unit(7, 6, 100, 10, 'enemy', 1, interface = self.interface)]       # Position (x = 7, y = 6), PdV intial = 100, puissance d'attaque = 8
         self.player_units = player_units
-        self.enemy_units = enemy_units 
-        startposP1 = [(0,0), (1,0), (1,1), (0,1)]
-        startposE = [(GRID_SIZE-1,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-2), (GRID_SIZE-2,GRID_SIZE-1)]
+        self.enemy_units = enemy_units
         random.shuffle(startposP1)
         random.shuffle(startposE)
 
@@ -62,6 +34,7 @@ class Game:
                             Desarmement(), 
                             Vortex(),   
                             Teleportation()]
+        
         # Attribution de chaque compétence à une touche du clavier (A, Z, E, R, T, Y, U, I, O, P)
         self.touches_competences = {"Poison": pygame.K_a,
                                     "Pluie de projectiles": pygame.K_z,
@@ -80,42 +53,37 @@ class Game:
         """
         Met à jour l'affichage en utilisant l'interface graphique.
         """
-        # Affichage du jeu
-        self.interface.draw_interface(self.screen, self.player_row, self.player_col)
-
-        # Affichage des unités (alliées et ennemies)
-        for unit in self.player_units + self.enemy_units:
-            self.interface.draw_unit(self.screen, unit)
+        self.interface.draw_interface(self.screen, self.player_row, self.player_col) # Affichage du jeu
 
         competences_disponibles = [c for c in self.competences if c.nom not in self.competences_utilisees]
         self.interface.afficher_interface(competences_disponibles, self.touches_competences, self.messages)
         pygame.display.flip() # Mise à jour de l'écran    
 
     def handle_player_turn(self):
-        """Tour du joueur"""        
+        """Tour du joueur"""
         for selected_unit in self.player_units:
             has_acted = False # Indicateur pour savoir si l'unité a agi ou non pendant ce tour
-            for effet in selected_unit.effects[:]: # Gestion de la compétence "Poison" qui s'étend sur 2 tours
+            for effet in selected_unit.effects[:]: # Gestion des effets actifs sur l'unité
                 if effet["effet"] == "poison":
-                    selected_unit.attack(dommage=effet["dommages"]) # Dégâts infligés = -15 PdV
-                effet["duree"] -= 1 # Réduit la durée de l'effet
+                    selected_unit.attack(dommage = effet["dommages"])
+                effet["duree"] -= 1
                 if effet["duree"] <= 0:
                     self.interface.ajouter_message(f"{selected_unit.team} unité à ({selected_unit.x}, {selected_unit.y}) n'est plus affectée par {effet['effet']}.")
-                    selected_unit.effects.remove(effet) # Suppression de l'effet, une fois sa durée écoulée
+                    selected_unit.effects.remove(effet)
+
             selected_unit.is_selected = True
-            self.flip_display() # Mise à jour de l'affichage
+            self.flip_display()
 
             # Étape 1 : Déplacement de l'unité
             self.interface.ajouter_message(f"Déplacez l'unité : ({selected_unit.x}, {selected_unit.y})")
             max_deplacements = selected_unit.nombre_deplacements
             while max_deplacements > 0:
-                self.flip_display() # Mise à jour de l'affichage
-                for event in pygame.event.get(): # Gestion des évènements
-                    if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
-                        pygame.quit() # Fermeture de Pygame proprement
-                        exit() # Arrêt complet du programme
-                    if event.type == pygame.KEYDOWN: # Gestions de touches du clavier
-                        # Déplacement (touches fléchées)
+                self.flip_display()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN:
                         dx, dy = 0, 0
                         if event.key == pygame.K_LEFT:
                             dx = -1
@@ -126,8 +94,8 @@ class Game:
                         elif event.key == pygame.K_DOWN:
                             dy = 1
                         
-                        if dx != 0 or dy != 0: # Dans le cas où l'utilisateur tente de se déplacer
-                            moved = selected_unit.move(dx, dy, self.player_units, self.enemy_units) # Si le déplacement aboutit
+                        if dx != 0 or dy != 0:
+                            moved = selected_unit.move(dx, dy, self.player_units, self.enemy_units)
                             if moved:
                                 max_deplacements -= 1
                                 self.interface.ajouter_message(f"L'unité a été déplacée en ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
@@ -136,31 +104,71 @@ class Game:
                         break
 
             # Étape 2 : Transition vers le choix attaque/compétence
-            if max_deplacements == 0: # Dans le cas où le déplacement a été effectué
+            if max_deplacements == 0:
                 self.interface.ajouter_message("Veuillez choisir entre attaque directe et compétence.")
-                self.flip_display() # Mise à jour de l'affichage
+                self.flip_display()
 
-            # Étape 3 : Choix entre l'utilisation d'une compétence ou l'attaque directe
-            while not has_acted: # Tant que l'unité n'a pas agi, on répète la boucle pour permettre la sélection d'une compétence
-                for event in pygame.event.get(): # Gestion des évènements
-                    if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
-                        pygame.quit() # Fermeture de Pygame proprement
-                        exit() # Arrêt complet du programme
-                    if event.type == pygame.KEYDOWN: # Gestion des touches du clavier
-                        if event.key == pygame.K_SPACE: # Touche "Espace" implique le choix d'une attaque directe
+            # Étape 3 : Choix entre attaque directe ou compétence
+            while not has_acted:
+                self.flip_display()
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        exit()
+                    if event.type == pygame.KEYDOWN:
+                        # Gestion de l'attaque directe
+                        if event.key == pygame.K_SPACE:
+                            self.interface.ajouter_message("Vous avez choisi d'attaquer directement.")
+                            self.flip_display()
+
+                            # Vérifiez si une cible adjacente est disponible
                             cible = next((enemy for enemy in self.enemy_units if abs(enemy.x - selected_unit.x) + abs(enemy.y - selected_unit.y) == 1), None)
-                            if cible:
+                            if cible: # Attaque directe sur une cible adjacente
                                 selected_unit.attack(cible)
-                                self.interface.ajouter_message(f"L'unité {selected_unit.perso.nom} attaque l'ennemi à ({cible.x}, {cible.y}).")
+                                self.interface.ajouter_message(f"{selected_unit.perso.nom} attaque {cible.perso.nom} (-{selected_unit.attack(cible)} PdV).")
                                 if cible.health <= 0:
                                     self.enemy_units.remove(cible)
-                            else:
-                                self.interface.ajouter_message("L'attaque a échoué. Aucun ennemi à votre portée.")
-                            has_acted = True
-                        else: # Dans le cas du choix d'une compétence
-                            competence = Competence.selectionner_competence(
-                                self.interface, self.screen, self.competences, self.touches_competences, self.competences_utilisees
-                            )
+                                has_acted = True
+                            else: # Si aucune cible adjacente, activer le curseur
+                                self.interface.ajouter_message("Aucune cible adjacente. Sélectionnez-en une, puis appuyez sur Entrée.")
+                                self.flip_display()
+                                cible_x, cible_y = selected_unit.x, selected_unit.y  # Initialisation sur la position de l'unité
+                                selecting_target = True
+                                while selecting_target:
+                                    self.flip_display()
+                                    rect = pygame.Rect(cible_x * CELL_SIZE, cible_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                                    pygame.draw.rect(self.screen, (255, 255, 0), rect, 3)
+                                    pygame.display.update()
+                                    for target_event in pygame.event.get():
+                                        if target_event.type == pygame.QUIT:
+                                            pygame.quit()
+                                            exit()
+                                        if target_event.type == pygame.KEYDOWN:
+                                            if target_event.key == pygame.K_LEFT:
+                                                cible_x = max(0, cible_x - 1)
+                                            elif target_event.key == pygame.K_RIGHT:
+                                                cible_x = min(GRID_SIZE - 1, cible_x + 1)
+                                            elif target_event.key == pygame.K_UP:
+                                                cible_y = max(0, cible_y - 1)
+                                            elif target_event.key == pygame.K_DOWN:
+                                                cible_y = min(GRID_SIZE - 1, cible_y + 1)
+                                            elif target_event.key == pygame.K_RETURN:
+                                                selecting_target = False
+
+                                # Vérification de la cible
+                                cible = next((enemy for enemy in self.enemy_units if enemy.x == cible_x and enemy.y == cible_y), None)
+                                if cible:
+                                    selected_unit.attack(cible)
+                                    self.interface.ajouter_message(f"{selected_unit.perso.nom} attaque {cible.perso.nom} (-{selected_unit.attack(cible)} PdV).")
+                                    if cible.health <= 0:
+                                        self.enemy_units.remove(cible)
+                                else:
+                                    self.interface.ajouter_message("L'attaque a échoué. Aucun ennemi à cet emplacement.")
+                                has_acted = True
+                                break
+                        # Gestion de la sélection d'une compétence
+                        elif event.key == pygame.K_c: # Vous pouvez ajuster cette touche pour sélectionner une compétence
+                            competence = Competence.selectionner_competence(self.interface, self.screen, self.competences, self.touches_competences, self.competences_utilisees)
                             if competence:
                                 cible = Competence.selectionner_cible(selected_unit, self, competence)
                                 if cible:
@@ -170,10 +178,15 @@ class Game:
                                         self.interface.ajouter_message("Toutes les compétences ont été utilisées. Recharge des compétences...")
                                         self.competences_utilisees.clear()
                                 has_acted = True
-                self.flip_display() # Mise à jour de l'affichage
+                                break
+
             selected_unit.is_selected = False
+
+            # Nettoyage des unités mortes
             self.player_units = [unit for unit in self.player_units if unit.health > 0]
             self.enemy_units = [unit for unit in self.enemy_units if unit.health > 0]
+
+            # Vérification des conditions de victoire/défaite
             if not self.player_units:
                 self.interface.ajouter_message("Défaite ! Toutes vos unités ont été éliminées.")
                 pygame.quit()
@@ -188,11 +201,11 @@ class Game:
         for enemy in self.enemy_units:
             for effet in enemy.effects[:]:
                 if effet["effet"] == "poison":
-                    enemy.attack(dommage = effet["dommages"])  # Applique les dégâts du poison
-                effet["duree"] -= 1  # Réduit la durée de l'effet
+                    enemy.attack(dommage = effet["dommages"]) # Applique les dégâts du poison
+                effet["duree"] -= 1 # Réduit la durée de l'effet
                 if effet["duree"] <= 0:
                     self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) n'est plus affectée par {effet['effet']}.")
-                    enemy.effects.remove(effet)  # Supprime l'effet expiré
+                    enemy.effects.remove(effet) # Supprime l'effet expiré
             # Vérifie si l'ennemi est immobilisé (paralysie)
             if any(effet["effet"] == "immobilisé" for effet in enemy.effects):
                 self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) est paralysée et ne peut pas agir ce tour.")

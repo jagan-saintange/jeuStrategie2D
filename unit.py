@@ -53,30 +53,14 @@ class Unit():
 
 
     def __init__(self, perso, x, y, health, team, interface = None):
-        """
-        Construit une unité avec une position, une santé, une puissance d'attaque et une équipe.
-
-        Paramètres
-        ----------
-        x : int
-            La position x de l'unité sur la grille.
-        y : int
-            La position y de l'unité sur la grille.
-        health : int
-            La santé de l'unité.
-        attack_power : int
-            La puissance d'attaque de l'unité.
-        team : str
-            L'équipe de l'unité ('player' ou 'enemy').
-        """
         #self.name = name
         self.perso = perso
         self.x = x
         self.y = y
         self.health = health 
-        self.max_health = health  # Ajout de l'attribut max_health
+        self.max_health = health # Ajout de l'attribut max_health
         #self.type_unite = type_unite
-        self.team = str(team)  # 'player' ou 'enemy'
+        self.team = str(team) # 'player' ou 'enemy'
         #print(f'{self} est self.team)
         self.is_selected = False
         self.effects = [] # Liste des effets appliqués (ex: paralysie, bouclier)
@@ -116,20 +100,16 @@ class Unit():
             self.interface.ajouter_message(f"Déplacement réussi vers ({self.x}, {self.y}).")
         return True  # Déplacement réussi
 
-    def attack(self, cible = None, dommage = None):
+    def attack(self, cible=None, dommage=None):
         """Attaque une unité cible."""
-        if cible is not None: # Dans le cas où une cible est spécifiée
-            if any(effet["effet"] == "désarmé" for effet in self.effects): # Dans le cas où l'unité est désarmée
+        if cible is not None:
+            if any(effet["effet"] == "désarmé" for effet in self.effects): # Dans le cas où l'utilisateur est désarmé
                 self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est désarmée.")
                 return # Empêche l'attaque
             if abs(self.x - cible.x) <= 1 and abs(self.y - cible.y) <= 1:
-                self.attack_critique_esquive(cible) #j'avais inversé self et target avant aaaa
-                #target.HPloss(30, self, crit, choix) #du point de vue du target, il y a perte de pv
-                print('attack done')
-        if self.health <= 0: # Dans le cas où l'unité meurt
-            self.health = 0
-            self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est morte !")
-    
+                dommages = self.attack_critique_esquive(cible) # Dommages infligés
+                return dommages # Retourne les dommages totaux infligés
+                
     def appliquer_effet(self, effet, duree, dommages = 0):
         for existing_effet in self.effects:
             if existing_effet["effet"] == effet.lower():
@@ -172,7 +152,6 @@ class Unit():
             commentaire = "réussite critique"
         
         return result, commentaire
-        
 
     def choix_stat_comp(self, other_unit, choix_stats):
         choix = choix_stats[:2]
@@ -195,8 +174,6 @@ class Unit():
             return vs_agi, vs_agi_other*facteur
         else:
             raise TypeError('choix_stat_comp')
-        
-    
     
     def multiplicateur(self, other_unit, crit, choix_stats):
         if crit:
@@ -205,7 +182,6 @@ class Unit():
             borne_multiplication = 0.5
         stats = self.choix_stat_comp(other_unit, choix_stats)
         return Unit.ponderation(stats[0], stats[1])*borne_multiplication+1
-
 
     def additionneur(self, other, degats):
         comp = self.comparateur_faiblesse_resistance(other)
@@ -268,78 +244,66 @@ class Unit():
         return faiblesse, resistance
     
 
-    def attack_critique_esquive(self, target, choix_stats = [False, False, 1]):
-        print('===================================\n')    
-         
-        LIM = 6 #Très important ! est la limite pour lequel un jet de dé est considéré comme un succès ou un échec, indépendemment du commentaire du dé
-                #on pourrait imaginer le modifier avec la constante LEVEL voire, de donner des lim indépendante pour chaque jet de dé
-                #voir aussi l'equilibrage du jeu, ne pas donner trop de place à l'aléatoire dans un jeu de strat de manière générale même si ici la volonté est de constament bousculer la stratégie du joueur et le forcer à s'adapter
-        
-        crit = False #on active ou non une comparaison par la stat agilité au lieu de [défense, attaque] classique, le chiffre est le facteur de la stat de l'attaquant
-        #normalement est déjà set par défaut comme ça à l'appel de la fonction HPloss
+    def attack_critique_esquive(self, target, choix_stats=[False, False, 1]):  
+        LIM = 6
+        crit = False
+        total_dommages = 0  # Variable pour accumuler les dommages
+
         resD20att = Unit.D20()
         print(resD20att, 'est le res du jet de dé de l attaquant', self.perso.nom)
-        if resD20att[0]>LIM:
+
+        if resD20att[0] > LIM:
             if "important" in resD20att[1]:
-                #•print(resD20att[1])
                 crit = True
                 print('coup critique !')
                 target.HPloss(30, self, crit, choix_stats)
+                total_dommages += 30
             elif "critique" in resD20att[1]:
                 resD20def = Unit.D20()
                 print(resD20def, 'est la TENTATIVE D ESQUIVE MIRACULEUSE de', self.perso.nom)
-                if resD20def[0] == 20:
-                    print("esquive miraculeuse !")
-                else:
+                if resD20def[0] != 20:
                     crit = True
                     target.HPloss(30, self, crit, choix_stats)
-                    if target.health >0:
+                    total_dommages += 30
+                    if target.health > 0:
                         crit = False
                         choix_stats = [False, True, 1]
                         target.HPloss(30, self, crit, choix_stats)
+                        total_dommages += 30
                     print("réussite critique + attaque supp")
-            
             else:
                 target.HPloss(30, self, crit, choix_stats)
-            #    raise TypeError('attack_critique_esquive, attaque error')
-                
-                
-        elif resD20att[0]<=LIM:
+                total_dommages += 30
+
+        elif resD20att[0] <= LIM:
             resD20def = Unit.D20()
             print(resD20def, 'est le res du jet de dé du defenseur', target.perso.nom)
-            if resD20def[0]>LIM:
-                if ('important' in resD20att[1]) or ('important' in resD20def[1]):
-                    if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power):
-                       choix_stats = [False, True, 2]
-                    else : 
-                       choix_stats = [True, True, 2]
-                    self.HPloss(30, target, crit, choix_stats) #self redevient la cible de la perte de pv !
-            
+            if resD20def[0] > LIM:
+                if 'important' in resD20att[1] or 'important' in resD20def[1]:
+                    choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
+                    self.HPloss(30, target, crit, choix_stats)
+                    total_dommages += 30
                 elif "critique" in resD20def[1]:
                     resD20att2 = Unit.D20()
                     print(resD20att2, 'est l ULTIME jet de dé de l attaquant', self.perso.nom)
-                    if resD20att2[0] == 20:
-                        print("esquive miraculeuse !")
-                    else:
-                        if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power):
-                           choix_stats = [False, True, 2]
-                        else : 
-                           choix_stats = [True, True, 2]
-                        self.HPloss(30, target, crit, choix_stats) #self redevient la cible de la perte de pv !
+                    if resD20att2[0] != 20:
+                        choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
+                        self.HPloss(30, target, crit, choix_stats)
+                        total_dommages += 30
                         if self.health > 0:
                             choix_stats = [False, True, 1]
                             self.HPloss(30, target, crit, choix_stats)
-                            
-                #else:
-                #    raise TypeError('attack_critique_esquive, contre-attaque error')
+                            total_dommages += 30
                 else:
-                    #target.attack_critique_esquive(self, choix_stats = [False, False, 2])
                     target.HPloss(30, self, crit, choix_stats)
-        else:
-            raise TypeError('attack_critique_esquive, logic error')
-        
-        #print(self.health, target.health)
-        print('\nattaque terminée\n===================================\n')    
+                    total_dommages += 30
+            else:
+                target.HPloss(30, self, crit, choix_stats)
+                total_dommages += 30
+
+        print('\nattaque terminée\n===================================\n')
+        return total_dommages  # Retourne les dommages totaux
+ 
             
 ###############################################"""""
     
@@ -597,20 +561,20 @@ class Terrien(Unit):
 
 ############################################
 ############################################
-fighter_freddy = Terrien(perso=Freddy, x=-1, y=-1, health=120, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=30)
-fighter_chica = Aerien(perso=Chica, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=70)
-fighter_bonnie = Terrien(perso=Bonnie, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=40)
-fighter_foxy = Aerien(perso=Foxy, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=5, speed=80)
+fighter_freddy = Terrien(perso=Batman, x=-1, y=-1, health=120, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=30)
+fighter_chica = Aerien(perso=Spiderman, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=70)
+fighter_bonnie = Terrien(perso=Captain, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=40)
+fighter_foxy = Aerien(perso=Deadpool, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=5, speed=80)
 
-fighter_eren = Terrien(perso=Eren, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
-fighter_armin = Archer(perso=Armin, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
-fighter_mikasa = Aerien(perso=Mikasa, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
-fighter_levi = Aerien(perso=Levi, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
+fighter_eren = Terrien(perso=Mario, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
+fighter_armin = Archer(perso=Luigi, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
+fighter_mikasa = Aerien(perso=Peach, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
+fighter_levi = Aerien(perso=Yoshi, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
 
-fighter_dre = Terrien(perso=Dre, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_eminem = Archer(perso=Eminem, x=-1, y=-1, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)
-fighter_fifty = Terrien(perso=Fifty, x=-1, y=-1, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
-fighter_snoop = Aerien(perso=Snoop, x=-1, y=-1, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
+fighter_dre = Terrien(perso=Pikachu, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_eminem = Archer(perso=Charmander, x=-1, y=-1, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)
+fighter_fifty = Terrien(perso=Carapuce, x=-1, y=-1, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
+fighter_snoop = Aerien(perso=Bulbizarre, x=-1, y=-1, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
 
 fighter_nietzsche = Terrien(perso=Nietzsche,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
 fighter_marx = Terrien(perso=Marx, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)

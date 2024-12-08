@@ -7,8 +7,8 @@ from personnages import *
 ##########################################"
 
 
-startposP1 = [(0,0), (1,0), (1,1), (0,1)]
-startposE = [(GRID_SIZE-1,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-1), (GRID_SIZE-2,GRID_SIZE-2), (GRID_SIZE-1,GRID_SIZE-2)]
+startposP1 = [(2,5), (3,5), (2,6), (3,6)]
+startposE = [(17,5), (18,5), (17,6), (18,6)]
 random.shuffle(startposP1)
 random.shuffle(startposE)
        

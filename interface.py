@@ -106,9 +106,9 @@ class Interface:
         if unit.perso.icon != None:
             icon_scaled = pygame.transform.scale(unit.perso.icon, (self.a, self.a))
             screen.blit(icon_scaled, (unit.x * self.a, unit.y * self.a))
-            filtre = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
-            filtre.fill((*color, 70)) # Couleur semi-transparente
-            screen.blit(filtre, (unit.x * self.a, unit.y * self.a))
+            #filtre = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
+            #filtre.fill((*color, 70)) # Couleur semi-transparente
+            #screen.blit(filtre, (unit.x * self.a, unit.y * self.a))
         elif unit.perso.icon == None:
             pygame.draw.circle(screen, color, (unit.x * self.a + self.a // 2, unit.y * self.a + self.a // 2), self.a // 3)
 
