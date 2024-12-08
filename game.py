@@ -85,7 +85,7 @@ class Game:
 
         # Affichage des unités (alliées et ennemies)
         for unit in self.player_units + self.enemy_units:
-            unit.draw(self.screen, unit)
+            self.interface.draw_unit(self.screen, unit)
 
         competences_disponibles = [c for c in self.competences if c.nom not in self.competences_utilisees]
         self.interface.afficher_interface(competences_disponibles, self.touches_competences, self.messages)

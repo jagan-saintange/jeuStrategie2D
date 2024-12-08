@@ -330,7 +330,8 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
             if not interface.is_passable(nouvelle_position.x, nouvelle_position.y): # On s'assure que la case soit lbre d'accès
                 interface.ajouter_message(f"Impossible d'accéder la case de coordonnées ({nouvelle_position.x}, {nouvelle_position.y}). Téléportation annulée.")
                 return
-            utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
-            interface.ajouter_message(f"{utilisateur.team} unité téléportée à ({utilisateur.x}, {utilisateur.y})!")
+            else:
+                utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
+                interface.ajouter_message(f"{utilisateur.team} unité téléportée à ({utilisateur.x}, {utilisateur.y})!")
         else: # Si aucune nouvelle position n'est sélectionnée
             interface.ajouter_message("Téléportation annulée.")

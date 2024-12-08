@@ -22,12 +22,6 @@ class Interface:
         self.WHITE = (255, 255, 255)
         self.GREY = (200, 200, 200) # Couleur de la grille
         self.ALPHA = 125 # Transparence (0 = transparent, 255 = opaque)
-
-        # Images représentant les unités:
-        self.player_unit_images = [pygame.transform.scale(pygame.image.load("buissonrouge.png"), (self.a, self.a)),
-                                   pygame.transform.scale(pygame.image.load("skeleton.png"), (self.a, self.a))]
-        self.enemy_unit_images = [pygame.transform.scale(pygame.image.load("rosier.png"), (self.a, self.a)),
-                                  pygame.transform.scale(pygame.image.load("skeleton.png"), (self.a, self.a))]
         
         # Chargement des images du décor:
         self.background = pygame.transform.scale(pygame.image.load("bkr.jpg"), (self.x * self.a, self.y * self.a))
@@ -51,8 +45,8 @@ class Interface:
 
         blocage(8, 13, 0, 7) # Bassin
         blocage(9, 12, 7, 14) # 2ème partie de la cascade
-        blocage(9, 12, 15, 18) # 3ème parite de la cascade
-        blocage(9, 12, 19, 21) # 4ème parite de la cascade
+        blocage(9, 12, 15, 18) # 3ème partie de la cascade
+        blocage(9, 12, 19, 21) # 4ème partie de la cascade
         blocage(0, 2, 8, 9) # 1er muret
         blocage(6, 9, 8, 10) # 2ème muret
         blocage(12, 15, 8, 10) # 3ème muret
@@ -92,11 +86,9 @@ class Interface:
         
         self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('forest.png'), (self.a * 6, self.a * 6)), (16 * self.a, -1 * self.a))
         self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12.5 * self.a, 4 * self.a))
-
         
         self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (0 * self.a, 8.9 * self.a))
         self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12 * self.a, 10 * self.a))
-
 
     def draw_grid(self):
         self.grid_surface.fill((0, 0, 0, 0)) # Effacer la surface
@@ -105,29 +97,28 @@ class Interface:
         for col in range(self.x + 1):
             pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (col * self.a, 0), (col * self.a, self.y * self.a))
 
-
+    # Fonction permettant d'afficher l'unité sur l'écran:
     def draw_unit(self, screen, unit):
-        """
-        Affiche une unité sur l'écran.
-        """
-        # Sélectionner l'image en fonction de l'équipe et du type d'unité
-        if unit.team == 'player':
-            unit_image = self.player_unit_images[unit.type]
-        else:
-            unit_image = self.enemy_unit_images[unit.type]
-
-        # Surbrillance lorsque l'unité est sélectionnée
+        color = BLUE if unit.team == 'player1' else RED
         if unit.is_selected:
-            pygame.draw.rect(screen, (0, 255, 0), (unit.x * self.a, unit.y * self.a, self.a, self.a), 2)
-        screen.blit(unit_image, (unit.x * self.a, unit.y * self.a)) # Dessin de l'unité
+            pygame.draw.rect(screen, GREEN, (unit.x * self.a, unit.y * self.a, self.a, self.a))
+            
+        if unit.perso.icon != None:
+            icon_scaled = pygame.transform.scale(unit.perso.icon, (self.a, self.a))
+            screen.blit(icon_scaled, (unit.x * self.a, unit.y * self.a))
+            filtre = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
+            filtre.fill((*color, 70)) # Couleur semi-transparente
+            screen.blit(filtre, (unit.x * self.a, unit.y * self.a))
+        elif unit.perso.icon == None:
+            pygame.draw.circle(screen, color, (unit.x * self.a + self.a // 2, unit.y * self.a + self.a // 2), self.a // 3)
 
         # Calcul et dessin de la barre de vie
         health_bar_width = self.a // 2
         health_ratio = unit.health / unit.max_health
         health_bar_color = (255 - int(255 * health_ratio), int(255 * health_ratio), 0) # Du rouge au vert
-
         pygame.draw.rect(screen, health_bar_color, (unit.x * self.a + self.a // 4, unit.y * self.a - 5, int(health_bar_width * health_ratio), 5))
-        
+
+
     # Fonction qui affiche les compétences disponibles et leurs touches associées à droite du plateau de jeu
     def afficher_competences(self, screen, competences):
         pygame.draw.rect(screen, BLACK, (GRID_SIZE * CELL_SIZE, 0, WIDTH - GRID_SIZE * CELL_SIZE, HEIGHT)) # On efface la zone des compétences
@@ -175,6 +166,10 @@ class Interface:
         screen.blit(self.background, (0, 0)) # Arrière-plan
         screen.blit(self.campfire, (4 * self.a, 4 * self.a)) # Feu de camp (camp gauche)
         screen.blit(self.campfire, (16 * self.a, 4 * self.a)) # Feu de camp (camp droit)
+
+        for unit in self.game.player_units + self.game.enemy_units: # Pour que les unités apparaissent derrière le premier plan
+            self.draw_unit(screen, unit)
+
         self.draw_foreground() # Objets au premier plan (arbre, sapin, tente, etc.)
         screen.blit(self.foreground_surface, (0, 0))
         self.draw_grid() # Grille

@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Dec  5 23:28:53 2024
-
-@author: jag
-"""
-
-
 import pygame
 import random
 

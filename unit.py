@@ -139,42 +139,12 @@ class Unit():
                 return
         # Si l'effet n'existe pas, on l'ajoute
         self.effects.append({"effet": effet.lower(), "duree": duree, "dommages": dommages})
-
-            
-    def filter_draw(self, icon_scaled ,color):
-        # Create a color filter surface
-        filtre = (color[0], color[1], color[2], 70)  # Red color with some transparency
-        filtre_surface = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
-        filtre_surface.fill(filtre)
-        return filtre_surface
-
-    def draw(self, screen, liste_perso):
-        """Affiche l'unité sur l'écran."""
-        color = BLUE if self.team == 'player1' else RED
-        if self.is_selected:
-            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
-                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-            
-        if self.perso.icon !=None:
-            icon_scaled = pygame.transform.scale(self.perso.icon, (CELL_SIZE, CELL_SIZE))
-            screen.blit(icon_scaled, (self.x * CELL_SIZE, self.y * CELL_SIZE))
-            filtre = self.filter_draw(icon_scaled ,color)
-            screen.blit(filtre, (self.x * CELL_SIZE, self.y * CELL_SIZE))
-            
-        elif self.perso.icon == None:
-            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
-                           2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
-            
-        
-
-
+     
     def estim_nb_deplacements(self):
         nombre_deplacements = 1 
         nombre_deplacements += self.speed//20
         self.nombre_deplacements = nombre_deplacements #on laisse public pour l'instant
         self.current_move = 0 #on le crée que quand le nombre de déplacement est créé
-        
-    
     
     @staticmethod
     def ponderation(a, b): #plus ils sont faibles en niveau plus c'est la différence entre les stats qui va compter
