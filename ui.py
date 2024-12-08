@@ -8,6 +8,7 @@ Created on Thu Dec  5 23:28:53 2024
 
 import pygame
 import random
+import sys
 
 from unit import *
 from personnages import *
@@ -157,7 +158,8 @@ class Ui:
                 
             elif choice == '5':
                 print("Fin")
-                break #mettre un print lancement du jeu en sortie
+                sys.exit()
+                break
             else:
                 print("Invalid choice. Please try again.")
             print('BEEP')

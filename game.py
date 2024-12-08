@@ -51,7 +51,7 @@ class Game:
         """
         #Tour du joueur
         """
-        if len(self.enemy_units)!=0 and len(self.player1_units)!=0:
+        if len(self.enemy_units)!=0 and len(self.player1_units)!=0: #ce if ne marche pas comme souhaité
             for selected_unit in self.player1_units:
     
                 # Tant que l'unité n'a pas terminé son tour
@@ -211,7 +211,9 @@ class Game:
                             self.player1_units.remove(units)
                             print('UNITS A ETE REMOVED')
                 
-                
+            running = self.test_fin()
+            if not running:
+                break             
                             
                 
     
