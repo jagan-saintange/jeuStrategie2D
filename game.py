@@ -99,12 +99,18 @@ class Game: # Classe pour représenter le jeu
                             dy = 1
 
                         if dx != 0 or dy != 0:
-                            moved = selected_unit.move(dx, dy, self.player_units, self.enemy_units)
-                            if moved:
-                                max_deplacements -= 1
-                                self.interface.ajouter_message(f"L'unité a été déplacée en ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
+                            new_col = selected_unit.x + dx
+                            new_row = selected_unit.y + dy
+                            # On s'assure que la case est passable avant de permettre le déplacement
+                            if 0 <= new_row < GRID_SIZE and 0 <= new_col < GRID_SIZE and self.interface.passable(new_row, new_col):
+                                moved = selected_unit.move(dx, dy, self.player_units, self.enemy_units)
+                                if moved:
+                                    max_deplacements -= 1
+                                    self.interface.ajouter_message(f"L'unité a été déplacée en ({selected_unit.x}, {selected_unit.y}). Déplacements restants : {max_deplacements}")
+                                else:
+                                    self.interface.ajouter_message("Déplacement invalide. Prenez une autre direction.")
                             else:
-                                self.interface.ajouter_message("Déplacement invalide. Prenez une autre direction.")
+                                self.interface.ajouter_message("Zone bloquée. Prenez une autre direction.")
                         break
 
             # Étape 2 : Transition vers le choix attaque/compétence

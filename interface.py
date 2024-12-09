@@ -15,29 +15,28 @@ class Interface:
     def __init__(self, screen, game):
         pygame.init()
 
-        self.screen = screen
-        self.game = game
-        self.x = 21 # Nombre de carrés sur une ligne
-        self.y = 21 # Nombre de carrés sur une colonne
-        self.a = 30 # Taille d'un carré (en pixels)
+        self.screen = screen # Référence à l'écran principal (surface Pygame) où les éléments seront affichés
+        self.game = game # Référence à l'objet du jeu principal pour permettre l'intéraction avec ses données
+        self.x = 21 # Nombre de cellules sur une ligne (largeur de la grille)
+        self.y = 21 # Nombre de cellules sur une colonne (hauteur de la grille)
+        self.a = 30 # Taille d'une cellule (en pixels)
         self.b = 400 # Largeur de la zone des actions (en pixels)
         self.WIDTH = self.x * self.a + self.b # Largeur totale de la fenêtre
         self.HEIGHT = self.y * self.a # Hauteur totale de la fenêtre
-        self.font = pygame.font.SysFont(None, 20)
-        self.font_competences = pygame.font.SysFont("arial", 15, bold = True)
+        self.font = pygame.font.SysFont(None, 20) # Police par défaut (taille 20)
+        self.font_competences = pygame.font.SysFont("arial", 15, bold = True) # Police pour l'affichage des compétences
         self.messages = [] # Liste servant à stocker les messages à afficher
-        self.font_actions = pygame.font.Font(None, 20)
+        self.font_actions = pygame.font.Font(None, 20) # Police pour l'affichage des actions dans la zone dédiée
         self.max_messages = 20 # Limite du nombre de messages visibles
         # Couleurs
-        self.WHITE = (255, 255, 255)
         self.GREY = (200, 200, 200) # Couleur de la grille
         self.ALPHA = 125 # Transparence (0 = transparent, 255 = opaque)
         
-        # Chargement des images du décor:
+        # Chargement du fond d'écran:
         self.background = pygame.transform.scale(pygame.image.load("./assets/bkr.jpg"), (self.x * self.a, self.y * self.a))
 
-        # Grille de passabilité (True = passable, False = bloqué):
-        self.passability_grid = [[True] * self.x for _ in range(self.y)]
+        # Zone passable (True = passable, False = bloqué):
+        self.zone_passable = [[True] * self.x for _ in range(self.y)]
 
         # Surfaces pour les éléments de premier plan (arbre, sapin, tente, etc.) ainsi que la grille:
         self.grid_surface = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
@@ -46,33 +45,35 @@ class Interface:
         # Définir les cases bloquées
         self.define_blocked_areas()
 
-    def define_blocked_areas(self): # Fonction pour bloquer certaines zones de la grille
-        def blocage(x_min, x_max, y_min, y_max):
-            for row in range(y_min, y_max):
-                for col in range(x_min, x_max):
-                    self.passability_grid[row][col] = False
-
+    # Fonction qui initialise la grille de passabilité en définissant les zones bloquées
+    def define_blocked_areas(self):
+        def blocage(x_min, x_max, y_min, y_max): # Sous-fonction qui bloque une région rectangulaire donnée dans la grille
+            for ligne in range(y_min, y_max): # Parcours de toutes les lignes de la région spécifiée
+                for colonne in range(x_min, x_max): # Parcours de toutes les colonnes de la région spécifiée
+                    self.zone_passable[ligne][colonne] = False # On marque la cellule correspondante comme bloquée (False)
+        # Zones bloquées (non accessibles aux joueurs)
         blocage(8, 13, 0, 7) # Bassin
         blocage(9, 12, 7, 14) # 2ème partie de la cascade
         blocage(9, 12, 15, 18) # 3ème partie de la cascade
         blocage(9, 12, 19, 21) # 4ème partie de la cascade
-        blocage(0, 2, 8, 9) # 1er muret
+        blocage(0, 3, 8, 10) # 1er muret
         blocage(6, 9, 8, 10) # 2ème muret
         blocage(12, 15, 8, 10) # 3ème muret
         blocage(18, 21, 8, 10) # 4ème muret
         blocage(4, 5, 4, 5) # Feu de camp (gauche)
         blocage(16, 17, 4, 5) # Feu de camp (droite)
+        blocage(7, 8, 3, 4) # Caisse de lances (gauche)
+        blocage(13, 14, 3, 4) # Caisse d'épées (droite)
         blocage(19, 20, 12, 13) # Bûches
+        blocage(1, 6, 19, 20) # Barrières (tout en bas)
+        blocage(5, 6, 15, 18) # Barrières (près des ponts)
+        blocage(7, 8, 16, 17) # Charette
 
-    def is_passable(self, row, col):
-        if 0 <= row < self.y and 0 <= col < self.x:
-            return self.passability_grid[row][col]
+    # Fonction qui s'assure qu'une case donnée de la grille "zone_passable" est accessible
+    def passable(self, ligne, colonne):
+        if 0 <= ligne < self.y and 0 <= colonne < self.x: # On s'assure que la position (ligne, colonne) est dans les limites de la grille ([0, self.y[ et [0, self.x[)
+            return self.zone_passable[ligne][colonne] # True si la case n'a pas été préalablement bloquée
         return False
-
-    def place_image_at(self, screen, image, row, col):
-        if 0 <= row < self.y and 0 <= col < self.x:
-            position = (col * self.a, row * self.a)
-            screen.blit(image, position)
 
     def draw_foreground(self):
         # En bas, à gauche
@@ -98,12 +99,13 @@ class Interface:
         self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (0 * self.a, 8.9 * self.a))
         self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12 * self.a, 10 * self.a))
 
+    # Fonction qui dessine une grille semi-transparente par-dessus la carte
     def draw_grid(self):
-        self.grid_surface.fill((0, 0, 0, 0)) # Effacer la surface
-        for row in range(self.y + 1):
-            pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (0, row * self.a), (self.x * self.a, row * self.a))
-        for col in range(self.x + 1):
-            pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (col * self.a, 0), (col * self.a, self.y * self.a))
+        self.grid_surface.fill((0, 0, 0, 0)) # Efface la grille afin qu'à chaque appel, de nouvelles lignes ne se superposent pas à celles déjà existantes
+        for row in range(self.y + 1): # Parcours des lignes de la grille (y+1 afin d'inclure les bords)
+            pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (0, row * self.a), (self.x * self.a, row * self.a)) # Surface, couleur, coordonnées de départ, coordonnées d'arrivée
+        for col in range(self.x + 1): # Parcours des colonnes de la grille (x+1 afin d'nclure les bords)
+            pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (col * self.a, 0), (col * self.a, self.y * self.a)) # Surface, couleur, coordonnées de départ, coordonnées d'arrivée
 
     # Fonction qui affiche les compétences disponibles et leurs touches associées à droite du plateau de jeu
     def afficher_competences(self, screen, competences):
@@ -137,9 +139,9 @@ class Interface:
             screen.blit(surface, (x_zone + 10, y + i * 20)) # Affichage de l'action à l'écran, à la position (x, y) donnée
 
     def ajouter_message(self, message):
-        self.messages.append(message)
-        if len(self.messages) > 100:
-            self.messages.pop(0)
+        self.messages.append(message) # Ajout d'un nouveau message à la liste des messages (self.messages)
+        if len(self.messages) > 100: # Dans le cas où le nombre total de messages dépasse 100
+            self.messages.pop(0) # Suppression du message le plus ancien (d'index 0)
 
     def afficher_interface(self, competences_disponibles, touches_competences, messages):
         pygame.draw.rect(self.screen, (0, 0, 0), (GRID_SIZE * CELL_SIZE, 0, self.WIDTH - GRID_SIZE * CELL_SIZE + 500, self.HEIGHT))

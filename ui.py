@@ -1,22 +1,14 @@
 import pygame
 import random
-
 from unit import *
 from personnages import *
-
-##########################################"
-
 
 startposP1 = [(2,5), (3,5), (2,6), (3,6)]
 startposE = [(17,5), (18,5), (17,6), (18,6)]
 random.shuffle(startposP1)
 random.shuffle(startposE)
-       
 
-        
 class Ui:
-
-            
         
     def __init__(self):
         self.liste_combattants = Unit.get_instances()
@@ -159,5 +151,3 @@ class Ui:
         self.show_teams()
         print('Bon fight !')
         return self.player1_units, self.enemy_units
-    
-    

@@ -13,7 +13,6 @@ class Unit():
         # Return a copy of the list of instances
         return cls._instances.copy()
 
-
     def __init__(self, perso, x, y, health, team, interface = None):
         #self.name = name
         self.perso = perso
@@ -33,7 +32,7 @@ class Unit():
         # Vérifie si l'unité est immobilisée
         if any(effet["effet"] == "immobilisé" for effet in self.effects):
             self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est paralysée et ne peut pas se déplacer.")
-            return False  # Empêche le déplacement
+            return False # Déplacement impossible
 
         # Vérifie si le déplacement reste dans les limites de la grille
         new_x = self.x + dx
@@ -42,24 +41,20 @@ class Unit():
             return False
 
         for unit in player_units + enemy_units:
-            if unit.x == new_x and unit.y == new_y:  # Dans le cas où la case cible est occupée par une autre unité
-                if unit.team == self.team:  # Cas où l'unité sur la case est une alliée
+            if unit.x == new_x and unit.y == new_y: # Dans le cas où la case cible est occupée par une autre unité
+                if unit.team == self.team: # Cas où l'unité sur la case est une alliée
                     self.x, unit.x = unit.x, self.x
                     self.y, unit.y = unit.y, self.y
-                    if self.interface:
-                        self.interface.ajouter_message(f"Échange de position avec une unité alliée à ({new_x}, {new_y}).")
-                    return True  # Swap réussi
-                else:  # Cas où l'unité sur la case est une ennemie
-                    if self.interface:
-                        self.interface.ajouter_message(f"Case occupée par une unité ennemie à ({new_x}, {new_y}). Déplacement impossible.")
-                    return False  # Déplacement refusé
+                    return True # Swap réussi
+                else: # Cas où l'unité sur la case est une ennemie
+                    return False # Déplacement impossible
 
         # Si toutes les vérifications sont passées, déplacer l'unité
         self.x = new_x
         self.y = new_y
         if self.interface:
             self.interface.ajouter_message(f"Déplacement réussi vers ({self.x}, {self.y}).")
-        return True  # Déplacement réussi
+        return True # Déplacement réussi
 
     def attack(self, cible=None, dommage=None):
         """Attaque une unité cible."""
@@ -82,7 +77,7 @@ class Unit():
         self.effects.append({"effet": effet.lower(), "duree": duree, "dommages": dommages})
      
     def estim_nb_deplacements(self):
-        nombre_deplacements = 1 
+        nombre_deplacements = 1000 
         nombre_deplacements += self.speed//20
         self.nombre_deplacements = nombre_deplacements #on laisse public pour l'instant
         self.current_move = 0 #on le crée que quand le nombre de déplacement est créé
