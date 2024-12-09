@@ -40,7 +40,7 @@ class Competence(ABC):
             if isinstance(cible, Unit) and cible.team == "enemy" and cible.health <= 0: # Dans le cas où la cible est une unité ennemie ET qu'elle n'a plus de PdV
                 if cible in game.enemy_units:
                     game.enemy_units.remove(cible) # Suppression de la cible de la liste des ennemis
-                    interface.ajouter_message(f"L'unité ennemie située aux coordonnées ({cible.x}, {cible.y}) a été éliminée.")
+                    interface.ajouter_message(f"{cible.perso.nom} a été éliminé(e).")
         else:
             interface.ajouter_message("Impossible d'utiliser la compétence. Vérifiez l'utilisateur, la cible et la compétence.")
 
@@ -156,7 +156,7 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
                 cible.attack(dommage = self.dommage) # Dégâts immédiats (-15 PdV)
-                interface.ajouter_message(f"{cible.team} unité à ({cible.x}, {cible.y}) a été empoisonnée ! Elle subira {self.dommage} PdV de dégâts pendant {self.duree} tour(s).")
+                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné ! Il subira {self.dommage} PdV de dégâts pendant {self.duree} tours.")
                 cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
@@ -175,21 +175,21 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
             return # Fin de l'exécution
         cible_x, cible_y = cible.x, cible.y # Décomposition des coordonnées de la cible en 2 variables distinctes : cible_x et cible_y
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) > self.portee: # Calcul de la distance de Manhattan entre l'utilisateur et la cible
-            interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) est trop loin pour lancer Pluie de Projectiles.")
+            interface.ajouter_message(f"Aucune cible à portée.")
             return # Fin de l'exécution
 
-        interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) lance Pluie de Projectiles sur la zone centrée en ({cible_x}, {cible_y})!")
+        interface.ajouter_message(f"Pluie de projectiles lancée sur la zone centrée en ({cible_x}, {cible_y}) !")
         for dx in range(-1, 2): # Balayage horizontal dans une zone -1 à +1 (3 colonnes autour de la case désignée par l'utilisateur)
             for dy in range(-1, 2): # Balayage vertical dans une zone -1 à +1 (3 ligneses autour de la case désignée par l'utilisateur)
                 zone_x, zone_y = cible_x + dx, cible_y + dy # Calcul des coordonnées des cases situés dans la matrice 3x3
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
-                    for unit in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
-                        if unit.x == zone_x and unit.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
-                            unit.attack(dommage = self.dommage) # Dégâts infligés à/aux cible(s)
-                            interface.ajouter_message(f"{unit.team} unité à ({unit.x}, {unit.y}) perd {self.dommage} points de vie.")
-                            if unit.health <= 0: # Dans le cas où l'unité meurt
-                                game.enemy_units.remove(unit) # Suppression de l'unité
-                                interface.ajouter_message(f"{unit.team} unité à ({unit.x}, {unit.y}) a été éliminée.")
+                    for enemy in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
+                        if enemy.x == zone_x and enemy.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
+                            enemy.attack(dommage = self.dommage) # Dégâts infligés à/aux cible(s)
+                            interface.ajouter_message(f"{enemy.perso.nom} perd {self.dommage} points de vie.")
+                            if enemy.health <= 0: # Dans le cas où l'unité meurt
+                                game.enemy_units.remove(enemy) # Suppression de l'unité
+                                interface.ajouter_message(f"{enemy.perso.nom} a été éliminé.")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -217,10 +217,10 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
                 for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
                         enemy.attack(dommage = self.dommage) # Dégâts infligés (-15 PdV / cible)
-                        interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) vient d'être frappée par un missile (-{self.dommage} PdV).")
+                        interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")
                         if enemy.health <= 0: # Dans le cas où l'unité meurt
                             game.enemy_units.remove(enemy) # Suppression de l'unité
-                            interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) a été éliminée !")
+                            interface.ajouter_message(f"{enemy.perso.nom} a été éliminé !")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -232,9 +232,9 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
                 cible.attack(dommage = self.dommage) # Inflige -10 PdV à l'unité cible.
-                interface.ajouter_message(f"{cible.team} unité à ({cible.x}, {cible.y}) perd {self.dommage} points de vie à cause de Drain!")
+                interface.ajouter_message(f"{cible.perso.nom} perd {self.dommage} points de vie à cause de Drain.")
                 utilisateur.health = min(utilisateur.max_health, utilisateur.health + self.dommage) # Régénère +10 PdV à l'unité attaquante.
-                interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) regagne {self.dommage} points de vie grâce à Drain!")
+                interface.ajouter_message(f"{utilisateur.perso.nom} regagne {self.dommage} points de vie grâce à Drain.")
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -249,14 +249,14 @@ class Soin(Competence): # Compétence défensive : personnel, pas d'effet persis
 
     def utiliser(self, utilisateur, cible, game, interface):
         if cible is not utilisateur: # On s'assure que l'utilisateur se soigne lui-même
-            interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) ne peut soigner que lui-même !")
+            interface.ajouter_message(f"Échec. {utilisateur.perso.nom} ne peut soigner que lui-même.")
             return
         if utilisateur.health < utilisateur.max_health: # Si les PdV de l'utilisateur sont < 100
             points_recuperes = min(self.PdV, utilisateur.max_health - utilisateur.health) # Calcul du nombre de points de vie à récupérer, sans dépasser la jauge maximale
             utilisateur.health += points_recuperes # Ajout des points de vie récupérés aux PdV de l'utilisateur
-            interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) regagne {points_recuperes} points de vie grâce à Soin !")
+            interface.ajouter_message(f"{utilisateur.perso.nom} regagne {points_recuperes} points de vie grâce à Soin.")
         else: # Si la barre de vie de l'utilisateur est déjà pleine
-            interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) a déjà toute sa santé.")
+            interface.ajouter_message(f"{utilisateur.perso.nom} a déjà toute sa santé.")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -266,10 +266,10 @@ class Bouclier(Competence): # Compétence défensive : personnel, effet persista
 
     def utiliser(self, utilisateur, cible, game, interface):
         if cible is not utilisateur: # On s'assure que l'utilisateur utilise le bouclier sur lui-même
-            interface.ajouter_message(f"{utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) ne peut activer le bouclier que sur lui-même !")
+            interface.ajouter_message(f"Échec. {utilisateur.perso.nom} ne peut activer le bouclier que sur lui-même.")
             return
-        utilisateur.appliquer_effet("bouclier", self.duree) # Empêche toute attaque adverse de faire des dégâts sur l'unité pendant 2 tours
-        interface.ajouter_message(f"Bouclier activé sur {utilisateur.team} unité à ({utilisateur.x}, {utilisateur.y}) pour {self.duree} tours !")
+        utilisateur.appliquer_effet("bouclier", self.duree) # Empêche toute attaque adverse de faire des dégâts sur l'unité pendant 1 tour
+        interface.ajouter_message(f"Bouclier activé sur {utilisateur.perso.nom} pour {self.duree} tour.")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -281,7 +281,7 @@ class Paralysie(Competence): # Compétence passive : une seule cible, portée de
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee:  # Si la cible est à portée
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
                 cible.appliquer_effet("immobilisé", duree = 2)  # Applique l'effet
-                interface.ajouter_message(f"{cible.team} unité à ({cible.x}, {cible.y}) est paralysée pour {self.duree} tour(s)!")
+                interface.ajouter_message(f"{cible.perso.nom} est paralysé pour {self.duree} tour.")
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -297,7 +297,7 @@ class Desarmement(Competence): # Compétence passive : une seule cible, portée 
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée (dans un rayon de 10 cases)
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
                 cible.appliquer_effet("désarmé", duree = self.duree) # On empêche l'unité cible d'attaquer pendant 1 tour en la désarmant
-                interface.ajouter_message(f"{cible.team} unité à ({cible.x}, {cible.y}) est désarmée et ne peut pas attaquer pendant {self.duree} tour(s)!")
+                interface.ajouter_message(f"{cible.perso.nom} est désarmé et ne peut pas attaquer pendant {self.duree} tour.")
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -332,6 +332,6 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
                 return
             else:
                 utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
-                interface.ajouter_message(f"{utilisateur.team} unité téléportée à ({utilisateur.x}, {utilisateur.y})!")
+                interface.ajouter_message(f"{utilisateur.perso.nom} a été téléporté en ({utilisateur.x}, {utilisateur.y}).")
         else: # Si aucune nouvelle position n'est sélectionnée
             interface.ajouter_message("Téléportation annulée.")

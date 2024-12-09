@@ -2,47 +2,9 @@ import pygame
 import random as rd
 from abc import ABC, abstractmethod
 from personnages import *
-
-GRID_SIZE = 21 # Taille de la grille
-CELL_SIZE = 30 # Taille d'une cellule (case)
-WIDTH = GRID_SIZE * CELL_SIZE + 450 # Augmentation de l'espace pour afficher les compétences
-HEIGHT = GRID_SIZE * CELL_SIZE
-FPS = 30
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
+from interface import *
 
 class Unit():
-    """
-    Classe pour représenter une unité.
-
-    ...
-    Attributs
-    ---------
-    x : int
-        La position x de l'unité sur la grille.
-    y : int
-        La position y de l'unité sur la grille.
-    health : int
-        La santé de l'unité.
-    attack_power : int
-        La puissance d'attaque de l'unité.
-    team : str
-        L'équipe de l'unité ('player' ou 'enemy').
-    is_selected : bool
-        Si l'unité est sélectionnée ou non.
-
-    Méthodes
-    --------
-    move(dx, dy)
-        Déplace l'unité de dx, dy.
-    attack(target)
-        Attaque une unité cible.
-    draw(screen)
-        Dessine l'unité sur la grille.
-    """
     
     _instances = []
     
@@ -61,7 +23,6 @@ class Unit():
         self.max_health = health # Ajout de l'attribut max_health
         #self.type_unite = type_unite
         self.team = str(team) # 'player' ou 'enemy'
-        #print(f'{self} est self.team)
         self.is_selected = False
         self.effects = [] # Liste des effets appliqués (ex: paralysie, bouclier)
         self.interface = interface # Référence à l'interface pour pouvoir afficher les actions
@@ -303,7 +264,24 @@ class Unit():
 
         print('\nattaque terminée\n===================================\n')
         return total_dommages  # Retourne les dommages totaux
- 
+
+    # Fonction permettant d'afficher l'unité sur l'écran:
+    def draw_unit(self, screen):
+        color = (0, 0, 255) if self.team == 'player1' else (255, 0, 0)
+        if self.is_selected:
+            pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+
+        if self.perso.icon is not None:
+            icon_scaled = pygame.transform.scale(self.perso.icon, (CELL_SIZE, CELL_SIZE))
+            screen.blit(icon_scaled, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+        else:
+            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+
+        # Calcul et dessin de la barre de vie
+        health_bar_width = CELL_SIZE // 2
+        health_ratio = self.health / self.max_health
+        health_bar_color = (255 - int(255 * health_ratio), int(255 * health_ratio), 0)
+        pygame.draw.rect(screen, health_bar_color, (self.x * CELL_SIZE + CELL_SIZE // 4, self.y * CELL_SIZE - 5, int(health_bar_width * health_ratio), 5))
             
 ###############################################"""""
     

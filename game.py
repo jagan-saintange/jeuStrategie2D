@@ -2,11 +2,8 @@ import pygame
 import random
 import sys
 import time
-from unit import *
-from personnages import *
 from ui import *
 from abilities import *
-from interface import Interface
 
 LEVEL = 3 #doit etre > 1 ordre de grandeur des facultés débloquées : 1-3, mettre > 3 fera réfléchir l'IA plus longtemps encore tho
 
@@ -49,11 +46,16 @@ class Game: # Classe pour représenter le jeu
 
         self.competences_utilisees = set() # Suivi des compétences utilisées
 
-    def flip_display(self):
-        """
-        Met à jour l'affichage en utilisant l'interface graphique.
-        """
-        self.interface.draw_interface(self.screen, self.player_row, self.player_col) # Affichage du jeu
+    def flip_display(self): # Mise à jour de l'affichage en utilisant l'interface graphique
+        self.screen.blit(self.interface.background, (0, 0)) # Arrière-plan
+
+        for unit in self.player_units + self.enemy_units: # Unités (alliées et ennemies)
+            unit.draw_unit(self.screen)
+
+        self.interface.draw_foreground() # Objets au premier plan (arbre, sapin, tente, etc.)
+        self.screen.blit(self.interface.foreground_surface, (0, 0))
+        self.interface.draw_grid() # Grille semi-transparente (pour délimiter les cellules)
+        self.screen.blit(self.interface.grid_surface, (0, 0))
 
         competences_disponibles = [c for c in self.competences if c.nom not in self.competences_utilisees]
         self.interface.afficher_interface(competences_disponibles, self.touches_competences, self.messages)
@@ -62,10 +64,12 @@ class Game: # Classe pour représenter le jeu
     def handle_player_turn(self):
         """Tour du joueur"""
         for selected_unit in self.player_units:
-            has_acted = False # Indicateur pour savoir si l'unité a agi ou non pendant ce tour
-            for effet in selected_unit.effects[:]: # Gestion des effets actifs sur l'unité
+            has_acted = False  # Indicateur pour savoir si l'unité a agi ou non pendant ce tour
+
+            # Gestion des effets actifs sur l'unité
+            for effet in selected_unit.effects[:]:
                 if effet["effet"] == "poison":
-                    selected_unit.attack(dommage = effet["dommages"])
+                    selected_unit.attack(dommage=effet["dommages"])
                 effet["duree"] -= 1
                 if effet["duree"] <= 0:
                     self.interface.ajouter_message(f"{selected_unit.team} unité à ({selected_unit.x}, {selected_unit.y}) n'est plus affectée par {effet['effet']}.")
@@ -93,7 +97,7 @@ class Game: # Classe pour représenter le jeu
                             dy = -1
                         elif event.key == pygame.K_DOWN:
                             dy = 1
-                        
+
                         if dx != 0 or dy != 0:
                             moved = selected_unit.move(dx, dy, self.player_units, self.enemy_units)
                             if moved:
@@ -105,7 +109,7 @@ class Game: # Classe pour représenter le jeu
 
             # Étape 2 : Transition vers le choix attaque/compétence
             if max_deplacements == 0:
-                self.interface.ajouter_message("Veuillez choisir entre attaque directe et compétence.")
+                self.interface.ajouter_message("Souhaitez-vous attaquer directement (touche espace) ou utiliser une compétence (touche c) ?")
                 self.flip_display()
 
             # Étape 3 : Choix entre attaque directe ou compétence
@@ -118,56 +122,47 @@ class Game: # Classe pour représenter le jeu
                     if event.type == pygame.KEYDOWN:
                         # Gestion de l'attaque directe
                         if event.key == pygame.K_SPACE:
-                            self.interface.ajouter_message("Vous avez choisi d'attaquer directement.")
+                            self.interface.ajouter_message("Vous avez choisi d'attaquer directement. Veuillez sélectionner une cible.")
                             self.flip_display()
 
-                            # Vérifiez si une cible adjacente est disponible
-                            cible = next((enemy for enemy in self.enemy_units if abs(enemy.x - selected_unit.x) + abs(enemy.y - selected_unit.y) == 1), None)
-                            if cible: # Attaque directe sur une cible adjacente
-                                selected_unit.attack(cible)
-                                self.interface.ajouter_message(f"{selected_unit.perso.nom} attaque {cible.perso.nom} (-{selected_unit.attack(cible)} PdV).")
+                            # Sélection de la cible
+                            cible_x, cible_y = selected_unit.x, selected_unit.y
+                            selecting_target = True
+                            while selecting_target:
+                                self.flip_display()
+                                rect = pygame.Rect(cible_x * CELL_SIZE, cible_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+                                pygame.draw.rect(self.screen, (255, 255, 0), rect, 3)
+                                pygame.display.update()
+
+                                for target_event in pygame.event.get():
+                                    if target_event.type == pygame.QUIT:
+                                        pygame.quit()
+                                        exit()
+                                    if target_event.type == pygame.KEYDOWN:
+                                        if target_event.key == pygame.K_LEFT:
+                                            cible_x = max(0, cible_x - 1)
+                                        elif target_event.key == pygame.K_RIGHT:
+                                            cible_x = min(GRID_SIZE - 1, cible_x + 1)
+                                        elif target_event.key == pygame.K_UP:
+                                            cible_y = max(0, cible_y - 1)
+                                        elif target_event.key == pygame.K_DOWN:
+                                            cible_y = min(GRID_SIZE - 1, cible_y + 1)
+                                        elif target_event.key == pygame.K_RETURN:
+                                            selecting_target = False
+
+                            # Vérification de la cible
+                            cible = next((enemy for enemy in self.enemy_units if enemy.x == cible_x and enemy.y == cible_y), None)
+                            if cible and abs(selected_unit.x - cible_x) + abs(selected_unit.y - cible_y) == 1:
+                                dommages = selected_unit.attack_critique_esquive(cible)
+                                self.interface.ajouter_message(f"{selected_unit.perso.nom} attaque {cible.perso.nom} (-{dommages} PdV).")
                                 if cible.health <= 0:
                                     self.enemy_units.remove(cible)
                                 has_acted = True
-                            else: # Si aucune cible adjacente, activer le curseur
-                                self.interface.ajouter_message("Aucune cible adjacente. Sélectionnez-en une, puis appuyez sur Entrée.")
-                                self.flip_display()
-                                cible_x, cible_y = selected_unit.x, selected_unit.y  # Initialisation sur la position de l'unité
-                                selecting_target = True
-                                while selecting_target:
-                                    self.flip_display()
-                                    rect = pygame.Rect(cible_x * CELL_SIZE, cible_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
-                                    pygame.draw.rect(self.screen, (255, 255, 0), rect, 3)
-                                    pygame.display.update()
-                                    for target_event in pygame.event.get():
-                                        if target_event.type == pygame.QUIT:
-                                            pygame.quit()
-                                            exit()
-                                        if target_event.type == pygame.KEYDOWN:
-                                            if target_event.key == pygame.K_LEFT:
-                                                cible_x = max(0, cible_x - 1)
-                                            elif target_event.key == pygame.K_RIGHT:
-                                                cible_x = min(GRID_SIZE - 1, cible_x + 1)
-                                            elif target_event.key == pygame.K_UP:
-                                                cible_y = max(0, cible_y - 1)
-                                            elif target_event.key == pygame.K_DOWN:
-                                                cible_y = min(GRID_SIZE - 1, cible_y + 1)
-                                            elif target_event.key == pygame.K_RETURN:
-                                                selecting_target = False
-
-                                # Vérification de la cible
-                                cible = next((enemy for enemy in self.enemy_units if enemy.x == cible_x and enemy.y == cible_y), None)
-                                if cible:
-                                    selected_unit.attack(cible)
-                                    self.interface.ajouter_message(f"{selected_unit.perso.nom} attaque {cible.perso.nom} (-{selected_unit.attack(cible)} PdV).")
-                                    if cible.health <= 0:
-                                        self.enemy_units.remove(cible)
-                                else:
-                                    self.interface.ajouter_message("L'attaque a échoué. Aucun ennemi à cet emplacement.")
+                            else:
+                                self.interface.ajouter_message("La cible n'est pas à votre portée.")
                                 has_acted = True
-                                break
                         # Gestion de la sélection d'une compétence
-                        elif event.key == pygame.K_c: # Vous pouvez ajuster cette touche pour sélectionner une compétence
+                        elif event.key == pygame.K_c:
                             competence = Competence.selectionner_competence(self.interface, self.screen, self.competences, self.touches_competences, self.competences_utilisees)
                             if competence:
                                 cible = Competence.selectionner_cible(selected_unit, self, competence)
@@ -178,7 +173,6 @@ class Game: # Classe pour représenter le jeu
                                         self.interface.ajouter_message("Toutes les compétences ont été utilisées. Recharge des compétences...")
                                         self.competences_utilisees.clear()
                                 has_acted = True
-                                break
 
             selected_unit.is_selected = False
 

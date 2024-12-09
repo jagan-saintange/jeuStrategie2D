@@ -1,5 +1,15 @@
 import pygame
-from unit import *
+
+GRID_SIZE = 21 # Taille de la grille
+CELL_SIZE = 30 # Taille d'une cellule (case)
+WIDTH = GRID_SIZE * CELL_SIZE + 450 # Augmentation de l'espace pour afficher les compétences
+HEIGHT = GRID_SIZE * CELL_SIZE
+FPS = 30
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
 
 class Interface:
     def __init__(self, screen, game):
@@ -24,8 +34,7 @@ class Interface:
         self.ALPHA = 125 # Transparence (0 = transparent, 255 = opaque)
         
         # Chargement des images du décor:
-        self.background = pygame.transform.scale(pygame.image.load("bkr.jpg"), (self.x * self.a, self.y * self.a))
-        self.campfire = pygame.transform.scale(pygame.image.load("campfire.png"), (self.a, self.a))
+        self.background = pygame.transform.scale(pygame.image.load("./assets/bkr.jpg"), (self.x * self.a, self.y * self.a))
 
         # Grille de passabilité (True = passable, False = bloqué):
         self.passability_grid = [[True] * self.x for _ in range(self.y)]
@@ -66,29 +75,28 @@ class Interface:
             screen.blit(image, position)
 
     def draw_foreground(self):
-        
         # En bas, à gauche
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('sapin.png'), (self.a , self.a * 2)), (12.2 * self.a, 15 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('arbre.png'), (self.a * 1.9, self.a * 2)), (13.2 * self.a, 14.7 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('arbre.png'), (self.a * 1.9, self.a * 2)), (12.2 * self.a, 16 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/sapin.png'), (self.a , self.a * 2)), (12.2 * self.a, 15 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (13.2 * self.a, 14.7 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (12.2 * self.a, 16 * self.a))
         # En bas, à droite
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('arbre.png'), (self.a * 1.9, self.a * 2)), (17.2 * self.a, 14.8 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('sapin.png'), (self.a , self.a * 2)), (17.9 * self.a, 16 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('arbre.png'), (self.a * 1.9, self.a * 2)), (16 * self.a, 16 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (17.2 * self.a, 14.8 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/sapin.png'), (self.a , self.a * 2)), (17.9 * self.a, 16 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (16 * self.a, 16 * self.a))
 
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('ferme.png'), (self.a * 2.5, self.a * 2.8)), (1.3 * self.a, 12 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('chariot.png'), (self.a *1.5, self.a * 1.5)), (6.8 * self.a, 15.8 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/ferme.png'), (self.a * 2.5, self.a * 2.8)), (1.3 * self.a, 12 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/chariot.png'), (self.a *1.5, self.a * 1.5)), (6.8 * self.a, 15.8 * self.a))
 
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('tente.png'), (self.a * 2, self.a * 2)), (14 * self.a, 2 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('tente.png'), (self.a * 2, self.a * 2)), (5 * self.a, 2 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('forestgauche.png'), (self.a * 6, self.a * 6)), (-1 * self.a, -1 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('grandarbregauche.png'), (self.a * 3.7, self.a * 3.7)), (4.8 * self.a, 4 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/tente.png'), (self.a * 2, self.a * 2)), (14 * self.a, 2 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/tente.png'), (self.a * 2, self.a * 2)), (5 * self.a, 2 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/forestgauche.png'), (self.a * 6, self.a * 6)), (-1 * self.a, -1 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbregauche.png'), (self.a * 3.7, self.a * 3.7)), (4.8 * self.a, 4 * self.a))
         
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('forest.png'), (self.a * 6, self.a * 6)), (16 * self.a, -1 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12.5 * self.a, 4 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/forest.png'), (self.a * 6, self.a * 6)), (16 * self.a, -1 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12.5 * self.a, 4 * self.a))
         
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (0 * self.a, 8.9 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12 * self.a, 10 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (0 * self.a, 8.9 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12 * self.a, 10 * self.a))
 
     def draw_grid(self):
         self.grid_surface.fill((0, 0, 0, 0)) # Effacer la surface
@@ -96,28 +104,6 @@ class Interface:
             pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (0, row * self.a), (self.x * self.a, row * self.a))
         for col in range(self.x + 1):
             pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (col * self.a, 0), (col * self.a, self.y * self.a))
-
-    # Fonction permettant d'afficher l'unité sur l'écran:
-    def draw_unit(self, screen, unit):
-        color = BLUE if unit.team == 'player1' else RED
-        if unit.is_selected:
-            pygame.draw.rect(screen, GREEN, (unit.x * self.a, unit.y * self.a, self.a, self.a))
-            
-        if unit.perso.icon != None:
-            icon_scaled = pygame.transform.scale(unit.perso.icon, (self.a, self.a))
-            screen.blit(icon_scaled, (unit.x * self.a, unit.y * self.a))
-            #filtre = pygame.Surface(icon_scaled.get_size(), pygame.SRCALPHA)
-            #filtre.fill((*color, 70)) # Couleur semi-transparente
-            #screen.blit(filtre, (unit.x * self.a, unit.y * self.a))
-        elif unit.perso.icon == None:
-            pygame.draw.circle(screen, color, (unit.x * self.a + self.a // 2, unit.y * self.a + self.a // 2), self.a // 3)
-
-        # Calcul et dessin de la barre de vie
-        health_bar_width = self.a // 2
-        health_ratio = unit.health / unit.max_health
-        health_bar_color = (255 - int(255 * health_ratio), int(255 * health_ratio), 0) # Du rouge au vert
-        pygame.draw.rect(screen, health_bar_color, (unit.x * self.a + self.a // 4, unit.y * self.a - 5, int(health_bar_width * health_ratio), 5))
-
 
     # Fonction qui affiche les compétences disponibles et leurs touches associées à droite du plateau de jeu
     def afficher_competences(self, screen, competences):
@@ -161,16 +147,3 @@ class Interface:
         self.afficher_competences(self.screen, competences_disponibles)
         # Affichage des actions (en dessous des compétences):
         self.afficher_messages(self.screen)
-
-    def draw_interface(self, screen, player_row, player_col):
-        screen.blit(self.background, (0, 0)) # Arrière-plan
-        screen.blit(self.campfire, (4 * self.a, 4 * self.a)) # Feu de camp (camp gauche)
-        screen.blit(self.campfire, (16 * self.a, 4 * self.a)) # Feu de camp (camp droit)
-
-        for unit in self.game.player_units + self.game.enemy_units: # Pour que les unités apparaissent derrière le premier plan
-            self.draw_unit(screen, unit)
-
-        self.draw_foreground() # Objets au premier plan (arbre, sapin, tente, etc.)
-        screen.blit(self.foreground_surface, (0, 0))
-        self.draw_grid() # Grille
-        screen.blit(self.grid_surface, (0, 0))
