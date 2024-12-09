@@ -178,9 +178,9 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
             interface.ajouter_message(f"Aucune cible à portée.")
             return # Fin de l'exécution
 
-        interface.ajouter_message(f"Pluie de projectiles lancée sur la zone centrée en ({cible_x}, {cible_y}) !")
+        interface.ajouter_message(f"Pluie de projectiles lancée sur la zone centrée en ({cible_x}, {cible_y}).")
         for dx in range(-1, 2): # Balayage horizontal dans une zone -1 à +1 (3 colonnes autour de la case désignée par l'utilisateur)
-            for dy in range(-1, 2): # Balayage vertical dans une zone -1 à +1 (3 ligneses autour de la case désignée par l'utilisateur)
+            for dy in range(-1, 2): # Balayage vertical dans une zone -1 à +1 (3 lignes autour de la case désignée par l'utilisateur)
                 zone_x, zone_y = cible_x + dx, cible_y + dy # Calcul des coordonnées des cases situés dans la matrice 3x3
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for enemy in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
@@ -327,7 +327,7 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
         nouvelle_position = Competence.selectionner_cible(utilisateur, game) # Méthode du jeu qui permet au joueur de choisir une nouvelle position
 
         if nouvelle_position: # Si une nouvelle position est sélectionnée
-            if not interface.is_passable(nouvelle_position.x, nouvelle_position.y): # On s'assure que la case soit lbre d'accès
+            if not interface.passable(nouvelle_position.x, nouvelle_position.y): # On s'assure que la case soit lbre d'accès
                 interface.ajouter_message(f"Impossible d'accéder la case de coordonnées ({nouvelle_position.x}, {nouvelle_position.y}). Téléportation annulée.")
                 return
             else:

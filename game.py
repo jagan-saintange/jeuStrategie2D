@@ -9,10 +9,12 @@ LEVEL = 3 #doit etre > 1 ordre de grandeur des facultés débloquées : 1-3, met
 
 class Game: # Classe pour représenter le jeu
     def __init__(self, screen, player_units, enemy_units):
+        self.running = True  # Indicateur pour savoir si le jeu tourne
         self.screen = screen
         self.interface = Interface(self.screen, self)
         self.player_units = player_units
         self.enemy_units = enemy_units
+        
         random.shuffle(startposP1)
         random.shuffle(startposE)
 
@@ -82,11 +84,13 @@ class Game: # Classe pour représenter le jeu
             self.interface.ajouter_message(f"Déplacez l'unité : ({selected_unit.x}, {selected_unit.y})")
             max_deplacements = selected_unit.nombre_deplacements
             while max_deplacements > 0:
-                self.flip_display()
+                # Ajout de la gestion continue des événements pour éviter les blocages
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
+                self.flip_display()
+                for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
                         dx, dy = 0, 0
                         if event.key == pygame.K_LEFT:
@@ -120,11 +124,13 @@ class Game: # Classe pour représenter le jeu
 
             # Étape 3 : Choix entre attaque directe ou compétence
             while not has_acted:
-                self.flip_display()
+                # Ajout de la gestion continue des événements pour éviter les blocages
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
                         pygame.quit()
                         exit()
+                self.flip_display()
+                for event in pygame.event.get():
                     if event.type == pygame.KEYDOWN:
                         # Gestion de l'attaque directe
                         if event.key == pygame.K_SPACE:
@@ -135,15 +141,17 @@ class Game: # Classe pour représenter le jeu
                             cible_x, cible_y = selected_unit.x, selected_unit.y
                             selecting_target = True
                             while selecting_target:
+                                # Ajout de la gestion continue des événements pour éviter les blocages
+                                for target_event in pygame.event.get():
+                                    if target_event.type == pygame.QUIT:
+                                        pygame.quit()
+                                        exit()
                                 self.flip_display()
                                 rect = pygame.Rect(cible_x * CELL_SIZE, cible_y * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                                 pygame.draw.rect(self.screen, (255, 255, 0), rect, 3)
                                 pygame.display.update()
 
                                 for target_event in pygame.event.get():
-                                    if target_event.type == pygame.QUIT:
-                                        pygame.quit()
-                                        exit()
                                     if target_event.type == pygame.KEYDOWN:
                                         if target_event.key == pygame.K_LEFT:
                                             cible_x = max(0, cible_x - 1)
@@ -197,8 +205,18 @@ class Game: # Classe pour représenter le jeu
                 exit()
 
     def handle_enemy_turn(self):
-        """IA pour les ennemis."""
+        #IA pour les ennemis.
         for enemy in self.enemy_units:
+            if not self.running:
+                return  # Quitte si le jeu est arrêté
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    self.running = False
+                    return
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
             for effet in enemy.effects[:]:
                 if effet["effet"] == "poison":
                     enemy.attack(dommage = effet["dommages"]) # Applique les dégâts du poison
@@ -280,12 +298,13 @@ class Game: # Classe pour représenter le jeu
         self.enemy_units = [enemy for enemy in self.enemy_units if enemy.health > 0] # Mise à jour de la liste des ennemis pour exclure ceux qui sont morts
         if not self.player_units: # Si la liste des unités alliées (player_units) est vide
             self.interface.ajouter_message("Défaite ! Toutes vos unités ont été éliminées.")
-            pygame.quit() # Fermeture de Pygame proprement
-            exit() # Arrêt complet du programme # On vérifie si le jeu est terminé après que l'unité ait agi
+            self.running = False
+            return
         elif not self.enemy_units: # Si la liste des unités ennemies (enemy_units) est vide
             self.interface.ajouter_message("Victoire ! Tous les ennemis ont été éliminés.")
-            pygame.quit() # Fermeture de Pygame proprement
-            exit() # Arrêt complet du programme # On s'assure que la condition de fin de jeu n'est pas remplie (victoire ou défaite)
+            self.running = False
+            return
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -301,15 +320,17 @@ def main():
     pygame.display.set_caption("Mon jeu de stratégie")
     # Instanciation du jeu
     game = Game(screen, player_units, enemy_units)
+    clock = pygame.time.Clock()  # Ajout pour limiter les FPS
     # Boucle principale du jeu
     while True:
-        for event in pygame.event.get(): # Gestion des évènements
-            if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
-                pygame.quit() # Fermeture de Pygame proprement
-                exit() # Arrêt complet du programme
+        for event in pygame.event.get():  # Gestion des évènements
+            if event.type == pygame.QUIT:  # Dans le cas où l'utilisateur ferme la fenêtre du jeu
+                pygame.quit()  # Fermeture de Pygame proprement
+                exit()  # Arrêt complet du programme
 
         game.handle_player_turn()
         game.handle_enemy_turn()
+        clock.tick(30)  # Limite à 30 FPS
 
 if __name__ == "__main__":
     main()

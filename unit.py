@@ -63,8 +63,7 @@ class Unit():
                 self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est désarmée.")
                 return # Empêche l'attaque
             if abs(self.x - cible.x) <= 1 and abs(self.y - cible.y) <= 1:
-                dommages = self.attack_critique_esquive(cible) # Dommages infligés
-                return dommages # Retourne les dommages totaux infligés
+                cible.attack_critique_esquive(self) # Dommages infligés
                 
     def appliquer_effet(self, effet, duree, dommages = 0):
         for existing_effet in self.effects:
@@ -77,7 +76,7 @@ class Unit():
         self.effects.append({"effet": effet.lower(), "duree": duree, "dommages": dommages})
      
     def estim_nb_deplacements(self):
-        nombre_deplacements = 1000 
+        nombre_deplacements = 1
         nombre_deplacements += self.speed//20
         self.nombre_deplacements = nombre_deplacements #on laisse public pour l'instant
         self.current_move = 0 #on le crée que quand le nombre de déplacement est créé
@@ -152,10 +151,6 @@ class Unit():
     
     
     def HPloss(self, degats_brut : int, other_unit, crit : bool, choix_stats = [False, False, 1]):
-        if any(effet["effet"] == "bouclier" for effet in self.effects): # Dans le cas où l'unité (cible) est protégée par un bouclier
-            print(f"{self.perso.nom} est protégé par un bouclier. Aucun dégât reçu.") # Absorption des dégâts par le bouclier
-            self.effects = [effet for effet in self.effects if effet["effet"] != "bouclier"] # Suppression de l'effet immédiatemet après l'attaque
-            return
         multiplicateur = self.multiplicateur(other_unit, crit, choix_stats)
         #print(multiplicateur)
         degats = int((multiplicateur * degats_brut))
