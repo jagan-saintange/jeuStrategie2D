@@ -8,6 +8,12 @@ from personnages import *
 from ui import *
 
 LEVEL = 3 #doit etre >1 ordre de grandeur des facultés débloquées : 1-3, mettre >3 fera réfléchir l'IA plus longtemps encore tho
+        
+# Initialisation de Pygame
+pygame.init()
+
+# Set up font
+font = pygame.font.Font(".\\Fonts\\comic.ttf", 36)
 
 class Game:
     """
@@ -47,7 +53,7 @@ class Game:
 #----------------------------------------
 
 
-    def handle_player_turn(self):
+    def handle_player_turn(self, game):
         """
         #Tour du joueur
         """
@@ -76,7 +82,11 @@ class Game:
                                 pygame.quit()
                                 sys.exit()
                         
-                        
+                        # Gestion des touches du clavier
+                        if event.type == pygame.KEYDOWN:
+                            if event.key == pygame.K_TAB:
+                                game.toggle_inspect(selected_unit)
+                                self.flip_display(selected_unit)
                         
                         # Gestion des touches du clavier
                         if event.type == pygame.KEYDOWN:
@@ -91,6 +101,8 @@ class Game:
                                 dy = -1
                             elif event.key == pygame.K_DOWN:
                                 dy = 1
+                    
+                        
                             
                             
                             if dx != 0 or dy != 0:
@@ -225,8 +237,8 @@ class Game:
 
         # Affiche la grille
         self.screen.fill(BLACK)
-        for x in range(0, WIDTH, CELL_SIZE):
-            for y in range(0, HEIGHT, CELL_SIZE):
+        for x in range(box_width+ DECALAGE*2, GRID_WIDTH+box_width+DECALAGE, CELL_SIZE):
+            for y in range(DECALAGE, GRID_HEIGHT+DECALAGE, CELL_SIZE):
                 rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
                 pygame.draw.rect(self.screen, WHITE, rect, 1)
 
@@ -238,10 +250,11 @@ class Game:
             
         #CURSEUR DE sélection
         if selected_unit != False:
-            pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
-        
-        #print('boop')
+            pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE  + X_DEC, selected_unit.y * CELL_SIZE + Y_DEC, CELL_SIZE, CELL_SIZE), 3)
             
+            self.draw_info_box(self.screen, selected_unit, box_rect)
+            #print('boop')
+        
             
 
         # Rafraîchit l'écran
@@ -253,7 +266,129 @@ class Game:
         else:
             return True
         
+        
+    def toggle_inspect(self, selected_unit):
+        pygame.display.flip() 
+        # Initialize movement deltas
+        dx, dy = 0, 0
     
+        # Important: this loop handles Pygame events
+        while True:  # Keep this loop running until the inspection is exited
+        
+            # Affiche la grille
+            self.screen.fill(BLACK)
+            for x in range(box_width+ DECALAGE*2, GRID_WIDTH+box_width+DECALAGE, CELL_SIZE):
+                for y in range(DECALAGE, GRID_HEIGHT+DECALAGE, CELL_SIZE):
+                    rect = pygame.Rect(x, y, CELL_SIZE, CELL_SIZE)
+                    pygame.draw.rect(self.screen, WHITE, rect, 1)
+            
+        
+            #self.flip_display(selected_unit)
+            for event in pygame.event.get():
+                # Handle quitting the game
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+    
+                
+                units = self.player1_units + self.enemy_units
+                # Affiche les unités
+                for unit in units:
+                    unit.draw(self.screen, units)
+                
+    
+                # Handle keyboard events
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_TAB:
+                        return  # Exit the inspection mode
+                    
+
+                   
+                   
+                    
+                    pygame.display.flip()
+                    
+                    # Movement controls
+                    if event.key == pygame.K_LEFT:
+                        dx -= 1
+                    elif event.key == pygame.K_RIGHT:
+                        dx += 1
+                    elif event.key == pygame.K_UP:
+                        dy -= 1
+                    elif event.key == pygame.K_DOWN:
+                        dy += 1
+    
+            # Calculate the new position
+            new_x = selected_unit.x + dx
+            new_y = selected_unit.y + dy
+
+            # Ensure the new position is within bounds (optional)
+            if 0 <= new_x < GRID_WIDTH and 0 <= new_y < GRID_HEIGHT:  # Replace with your grid dimensions
+                # Clear the previous selection (optional)
+                self.screen.fill((0, 0, 0))  # Clear the screen or redraw the background
+
+                # Draw the selection rectangle
+                pygame.draw.rect(self.screen, BLUE, (new_x * CELL_SIZE + X_DEC, new_y * CELL_SIZE + Y_DEC, CELL_SIZE, CELL_SIZE), 3)
+
+                # Check for units at the new position
+                for unit in self.player1_units + self.enemy_units:
+                    if unit.x == new_x and unit.y == new_y:
+                        self.draw_info_box(self.screen, unit, box_rect)
+                        unit.draw(self.screen, self.player1_units + self.enemy_units)
+                        
+            
+    
+            # Update the display
+            pygame.display.flip()  # Refresh the screen to show changes
+
+
+    
+    def draw_info_box(self, screen, unit, box_rect):
+        # Draw the box
+        
+        # Determine the color based on the unit's team
+        color = BLUE if unit.team == 'player1' else RED
+        color = int(color[0]/1.5), int(color[1]/1.5), int(color[2]/1.5)
+        
+        # Draw the box rectangle
+        box = pygame.draw.rect(screen, color, box_rect)
+        
+        adjusted_box_rect = box_rect.move(CELL_SIZE + X_DEC, CELL_SIZE + Y_DEC)
+
+            # Check if the unit has an icon and draw it
+        if unit.perso.icon is not None:
+            icon_scaled = pygame.transform.scale(unit.perso.icon, (CELL_SIZE*2, CELL_SIZE*2))
+            screen.blit(icon_scaled, (box_rect.x + 10, box_rect.y + 10))  # Position the icon inside the box
+    
+        # Prepare the text to display
+        health_text = f"PdV: {unit.health}/{unit.maxhealth}"
+        attack_text = f"Attack: {unit.attack_power}"
+        defense_text = f"Defense: {unit.defense_power}"
+        agility_text = f'Agility: {unit.agility_power}'
+        speed_text = f'Speed: {unit.speed}'
+        nature_text =f'Nature: {unit.perso.de_nature}'
+        type_text ='perso de type: {unit.perso.de_type}'
+        
+        
+        # Render the text surfaces
+        health_surface = font.render(health_text, True, BLACK)
+        attack_surface = font.render(attack_text, True, BLACK)
+        defense_surface = font.render(defense_text, True, BLACK)
+        agility_surface = font.render(agility_text, True, BLACK)
+        speed_surface = font.render(speed_text, True, BLACK)
+        nature_surface = font.render(type_text, True, BLACK)
+        type_surface = font.render(type_text, True, BLACK)
+        
+        
+        
+        # Draw the text on the box
+        screen.blit(health_surface, (box_rect.x + 10, box_rect.y + 10 + CELL_SIZE*2))
+        screen.blit(attack_surface, (box_rect.x + 10, box_rect.y + 10 + CELL_SIZE*3))  # Below the icon
+        screen.blit(defense_surface, (box_rect.x + 10, box_rect.y + 10 + CELL_SIZE *4))  # Below the attack text
+        screen.blit(agility_surface, (box_rect.x + 10, box_rect.y + 10 + CELL_SIZE *5)) 
+        screen.blit(speed_surface, (box_rect.x + 10, box_rect.y + 10 + CELL_SIZE *6)) 
+        screen.blit(nature_surface, (box_rect.x + 10, box_rect.y + 10 + CELL_SIZE *8)) 
+        screen.blit(type_surface, (box_rect.x + 10, box_rect.y + 10 + CELL_SIZE *9))
 
 def main():
     
@@ -263,8 +398,7 @@ def main():
     print('chargement du jeu...')
     time.sleep(1)
 
-    # Initialisation de Pygame
-    pygame.init()
+
 
     # Instanciation de la fenêtre
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -273,10 +407,11 @@ def main():
     # Instanciation du jeu
     game = Game(screen, player1_units, enemy_units)
 
+
     running = True    
     
     while running:
-        game.handle_player_turn()
+        game.handle_player_turn(game)
         running = game.test_fin()
         if not running:
             break

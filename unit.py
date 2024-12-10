@@ -17,6 +17,42 @@ RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
 
+# Constantes
+#GRID_SIZE = 21
+#CELL_SIZE = 30
+
+WIDTH_FOR_BOX = 250
+DECALAGE = 20
+
+
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+GRAY = (200, 200, 200)
+
+
+
+WIDTH = GRID_SIZE * CELL_SIZE + DECALAGE*2 + WIDTH_FOR_BOX + 450
+HEIGHT = GRID_SIZE * CELL_SIZE + DECALAGE*2
+
+
+GRID_WIDTH = GRID_SIZE * CELL_SIZE 
+GRID_HEIGHT = GRID_SIZE * CELL_SIZE
+FPS = 30
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+GREEN = (0, 255, 0)
+
+
+box_width = WIDTH_FOR_BOX+DECALAGE
+box_height = HEIGHT - DECALAGE*2
+box_x = DECALAGE
+box_y = DECALAGE
+box_rect = pygame.Rect(box_y, box_x, box_width, box_height)
+
+X_DEC = box_width+ DECALAGE*2
+Y_DEC = DECALAGE
 
 
 class Unit():
@@ -79,6 +115,7 @@ class Unit():
         self.x = x
         self.y = y
         self.health = health 
+        self.maxhealth = health
         #self.type_unite = type_unite
         self.team = str(team)  # 'player' ou 'enemy'
         #print(f'{self} est self.team)
@@ -151,22 +188,21 @@ class Unit():
         """Affiche l'unité sur l'écran."""
         color = BLUE if self.team == 'player1' else RED
         if self.is_selected:
-            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE,
-                             self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+            pygame.draw.rect(screen, GREEN, (self.x * CELL_SIZE + X_DEC,
+                             self.y  * CELL_SIZE + Y_DEC, CELL_SIZE, CELL_SIZE))
             
         if self.perso.icon !=None:
             icon_scaled = pygame.transform.scale(self.perso.icon, (CELL_SIZE, CELL_SIZE))
-            screen.blit(icon_scaled, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+            screen.blit(icon_scaled, (self.x * CELL_SIZE + X_DEC, self.y * CELL_SIZE+ Y_DEC))
             filtre = self.filter_draw(icon_scaled ,color)
-            screen.blit(filtre, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+            screen.blit(filtre, (self.x * CELL_SIZE + X_DEC, self.y * CELL_SIZE + Y_DEC))
             
         elif self.perso.icon == None:
-            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE //
-                           2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + X_DEC+ CELL_SIZE //
+                           2  , self.y * CELL_SIZE  +Y_DEC + CELL_SIZE // 2), CELL_SIZE // 3)
             
         
-
-
+        
     def estim_nb_deplacements(self):
         nombre_deplacements = 1 
         nombre_deplacements += self.speed//20

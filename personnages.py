@@ -147,7 +147,7 @@ Armin = Personnage('Armin', 'SNK', 'eau')
 Mikasa = Personnage('Mikasa', 'SNK', 'feu')
 Levi = Personnage('Levi', 'SNK', 'eau')
 
-Dre = Personnage('Snoop', 'WestCoast', 'eau')
+Dre = Personnage('Dre', 'WestCoast', 'eau')
 Eminem = Personnage('Eminem', 'WestCoast', 'feu')
 Fifty = Personnage('Fifty', 'WestCoast', 'eau')
 Snoop = Personnage('Snoop', 'WestCoast', 'plante')
