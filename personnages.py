@@ -14,6 +14,12 @@ assets_path = {'Mario' : ".\\assets\\mario.png",
                'Spiderman' : ".\\assets\\spiderman.png",
                'Captain' : ".\\assets\\captainamerica.png",
                'Deadpool' : ".\\assets\\deadpool.png",
+               'Clochette' : ".\\assets\\feeclochette.png",
+               'Widow' : ".\\assets\\blackwidow.png",
+               'Mickey' : ".\\assets\\mickey.png",
+               'Donald' : ".\\assets\\donald.png",
+               'Luffy' : ".\\assets\\luffy.png",
+               'Naruto' : ".\\assets\\naruto.png",
                'Pikachu' : ".\\assets\\pikachu.png",
                'Bulbizarre' : ".\\assets\\bulbizarre.png",
                'Charmander' : ".\\assets\\charmander.png",
@@ -133,13 +139,13 @@ Charmander = Personnage('Charmander', 'WestCoast', 'feu')
 Carapuce = Personnage('Carapuce', 'WestCoast', 'eau')
 Bulbizarre = Personnage('Bulbizarre', 'WestCoast', 'plante')
 
-Nietzsche = Personnage('Nietzsche', 'philosophe', 'eau')
-Marx = Personnage('Marx', 'philosophe', 'feu')
-Camus = Personnage('Camus', 'philosophe', 'plante')
-Socrates = Personnage('Socrates', 'philosophe', 'plante')
+Clochette = Personnage('Clochette', 'philosophe', 'eau')
+Widow = Personnage('Widow', 'philosophe', 'feu')
+Mickey = Personnage('Mickey', 'philosophe', 'plante')
+Donald = Personnage('Donald', 'philosophe', 'plante')
 
-Trump = Personnage('Trump', 'USA', 'feu', 'orange', 'président des états Unis')
-Biden = Personnage('Biden', 'USA', 'feu', 'vieux', 'président des états Unis')
+Luffy = Personnage('Luffy', 'USA', 'feu', 'orange', 'président des états Unis')
+Naruto = Personnage('Naruto', 'USA', 'feu', 'vieux', 'président des états Unis')
 Obama = Personnage('Obama', 'USA', 'feu', 'noir', 'président des états Unis')
 Bush = Personnage('Bush (père et fils)', 'USA', 'feu', 'blancs', 'présidents des états Unis')
 

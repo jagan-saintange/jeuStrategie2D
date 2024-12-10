@@ -51,7 +51,7 @@ class Competence(ABC):
     def selectionner_cible(utilisateur, game, competence = None):
         curseur_x, curseur_y = utilisateur.x, utilisateur.y # Coordonnées du curseur initialisées avec les coordonnées actuelles de l'utilisateur
         if competence:
-            if competence.nom in ["Soin", "Bouclier", "Téléportation"]: # S'il s'agit des compétences "Bouclier", "Soin" ou "Téléportation", pas de sélection extérieure
+            if competence.nom in ["Soin", "Bouclier", "Vortex", "Téléportation"]: # S'il s'agit des compétences "Bouclier", "Soin" ou "Téléportation", pas de sélection extérieure
                 return utilisateur
             elif competence.nom == "Missile": # Sélection d'une ligne de 5 cases (horizontale ou verticale) pour la compétence "Missile"
                 direction = None # Variable dans laquelle on stocke la direction choisie par l'utilisateur
@@ -155,7 +155,7 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.attack(dommage = self.dommage) # Dégâts immédiats (-15 PdV)
+                cible.HPloss(self.dommage, self) # Dégâts immédiats (-15 PdV)
                 interface.ajouter_message(f"{cible.perso.nom} a été empoisonné ! Il subira {self.dommage} PdV de dégâts pendant {self.duree} tours.")
                 cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
@@ -310,12 +310,17 @@ class Vortex(Competence): # Compétence passive : toutes les cibles ennemies, po
         super().__init__("Vortex", portee = -1) # Portée vaut -1 pour indiquer qu'aucune limitation de portée n'est appliquée
 
     def utiliser(self, utilisateur, cible, game, interface):
-        if cible is None or not hasattr(cible, 'x') or not hasattr(cible, 'y'): # On s'assure qu'une case a bien été spécifiée
-            interface.ajouter_message("Erreur : Vortex nécessite une case cible valide.") # Message d'erreur si ce n'est pas le cas
-            return
-        for unit in game.enemy_units: # On parcourt toutes les unités ennemies présentes sur le plateau
-            unit.x, unit.y = cible.x, cible.y # Déplacement de chaque unité sur les coordonnées de la case cible (cible.x, cible.y)
-            interface.ajouter_message(f"Vortex activé: regroupement de toutes les unités ennemies sur la case ({cible.x}, {cible.y}).") # Activation du Vortex
+        while True: # Boucle qui tourne jusqu'à ce qu'une case valide soit sélectionnée
+            nouvelle_position = Competence.selectionner_cible(utilisateur, game)
+            if nouvelle_position:
+                if interface.passable(nouvelle_position.y, nouvelle_position.x) == False:
+                    interface.ajouter_message("Erreur : Vortex nécessite une case cible valide.") # Message d'erreur si ce n'est pas le cas
+                    continue
+                else:
+                    for unit in game.enemy_units: # On parcourt toutes les unités ennemies présentes sur le plateau
+                        unit.x, unit.y = nouvelle_position.x, nouvelle_position.y # Déplacement de chaque unité sur les coordonnées de la case cible (cible.x, cible.y)
+                    interface.ajouter_message(f"Vortex activé: regroupement de toutes les unités ennemies sur la case ({cible.x}, {cible.y}).") # Activation du Vortex
+                    break
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -323,15 +328,15 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
     def __init__(self):
         super().__init__("Téléportation", portee = -1) # Portée vaut -1 pour indiquer qu'aucune limitation de portée n'est appliquée
 
-    def utiliser(self, utilisateur, cible, game, interface): # "Cible" n'est pas utilisé ici, car la téléportation est personnelle
-        nouvelle_position = Competence.selectionner_cible(utilisateur, game) # Méthode du jeu qui permet au joueur de choisir une nouvelle position
+    def utiliser(self, utilisateur, cible, game, interface):
+        while True: # Boucle qui tourne jusqu'à ce qu'une case valide soit sélectionnée
+            nouvelle_position = Competence.selectionner_cible(utilisateur, game)
 
-        if nouvelle_position: # Si une nouvelle position est sélectionnée
-            if not interface.passable(nouvelle_position.x, nouvelle_position.y): # On s'assure que la case soit lbre d'accès
-                interface.ajouter_message(f"Impossible d'accéder la case de coordonnées ({nouvelle_position.x}, {nouvelle_position.y}). Téléportation annulée.")
-                return
-            else:
-                utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
-                interface.ajouter_message(f"{utilisateur.perso.nom} a été téléporté en ({utilisateur.x}, {utilisateur.y}).")
-        else: # Si aucune nouvelle position n'est sélectionnée
-            interface.ajouter_message("Téléportation annulée.")
+            if nouvelle_position: # Dans le cas où une case est sélectionnée
+                if interface.passable(nouvelle_position.y, nouvelle_position.x) == False: # On s'assure que la case soit libre d'accès
+                    interface.ajouter_message(f"Impossible d'accéder à la case de coordonnées ({nouvelle_position.x}, {nouvelle_position.y}).")
+                    continue # L'utilisateur doit sélectionner une autre case
+                else: # Dans le cas où la case n'est pas "bloquée"
+                    utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
+                    interface.ajouter_message(f"{utilisateur.perso.nom} a été téléporté en ({utilisateur.x}, {utilisateur.y}).")
+                    break # Une fois la téléportation effectuée, on quitte la boucle

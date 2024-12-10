@@ -42,12 +42,9 @@ class Unit():
 
         for unit in player_units + enemy_units:
             if unit.x == new_x and unit.y == new_y: # Dans le cas où la case cible est occupée par une autre unité
-                if unit.team == self.team: # Cas où l'unité sur la case est une alliée
-                    self.x, unit.x = unit.x, self.x
-                    self.y, unit.y = unit.y, self.y
-                    return True # Swap réussi
-                else: # Cas où l'unité sur la case est une ennemie
-                    return False # Déplacement impossible
+                self.x, unit.x = unit.x, self.x
+                self.y, unit.y = unit.y, self.y
+                return True # Swap réussi
 
         # Si toutes les vérifications sont passées, déplacer l'unité
         self.x = new_x
@@ -257,15 +254,22 @@ class Unit():
 
     # Fonction permettant d'afficher l'unité sur l'écran:
     def draw_unit(self, screen):
-        color = (0, 0, 255) if self.team == 'player1' else (255, 0, 0)
+        filter_color = (0, 0, 255, 50) if self.team == 'player1' else (255, 0, 0, 50)
+
         if self.is_selected:
             pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
         if self.perso.icon is not None:
             icon_scaled = pygame.transform.scale(self.perso.icon, (CELL_SIZE, CELL_SIZE))
             screen.blit(icon_scaled, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+
+            # Création d'une surface de filtre semi-transparente de la taille de l'icône
+            filter_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)  # Surface avec canal alpha
+            filter_surface.fill(filter_color)  # Applique la couleur du filtre
+            screen.blit(filter_surface, (self.x * CELL_SIZE, self.y * CELL_SIZE))  # Applique le filtre sur l'icône
+
         else:
-            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+            pygame.draw.circle(screen, (255, 255, 255), (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
 
         # Calcul et dessin de la barre de vie
         health_bar_width = CELL_SIZE // 2
@@ -544,13 +548,13 @@ fighter_eminem = Archer(perso=Charmander, x=-1, y=-1, health=90, team='undefined
 fighter_fifty = Terrien(perso=Carapuce, x=-1, y=-1, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
 fighter_snoop = Aerien(perso=Bulbizarre, x=-1, y=-1, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
 
-fighter_nietzsche = Terrien(perso=Nietzsche,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_marx = Terrien(perso=Marx, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
-fighter_camus = Archer(perso=Camus, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
-fighter_socrates = Terrien(perso=Socrates, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
+fighter_nietzsche = Terrien(perso=Clochette,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_marx = Terrien(perso=Widow, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
+fighter_camus = Archer(perso=Mickey, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
+fighter_socrates = Terrien(perso=Donald, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
 
-fighter_trump = Aerien(perso=Trump, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
-fighter_biden = Aerien(perso=Biden, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
+fighter_trump = Aerien(perso=Luffy, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
+fighter_biden = Aerien(perso=Naruto, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
 fighter_obama = Aerien(perso=Obama, x=-1, y=-1, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50)
 fighter_bush = Aerien(perso=Bush, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40)
 

@@ -2,7 +2,7 @@ import pygame
 
 GRID_SIZE = 21 # Taille de la grille
 CELL_SIZE = 30 # Taille d'une cellule (case)
-WIDTH = GRID_SIZE * CELL_SIZE + 450 # Augmentation de l'espace pour afficher les compétences
+WIDTH = GRID_SIZE * CELL_SIZE + 625 # Augmentation de l'espace pour afficher les compétences
 HEIGHT = GRID_SIZE * CELL_SIZE
 FPS = 30
 WHITE = (255, 255, 255)
