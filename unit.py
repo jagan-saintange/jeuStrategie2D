@@ -150,7 +150,7 @@ class Unit():
         return round(faiblesse + resistance)
     
     
-    def HPloss(self, degats_brut : int, other_unit, crit : bool, choix_stats = [False, False, 1]):
+    def HPloss(self, degats_brut : int, other_unit, crit : bool = False, choix_stats = [False, False, 1]):
         multiplicateur = self.multiplicateur(other_unit, crit, choix_stats)
         #print(multiplicateur)
         degats = int((multiplicateur * degats_brut))
