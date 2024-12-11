@@ -1,5 +1,6 @@
 import pygame
 import random
+import sys
 from unit import *
 from personnages import *
 
@@ -94,7 +95,7 @@ class Ui:
                 print("\n==================\nc'est à l'adversaire de choisir")    
                 
             
-            choice = input("\nEntrez l'option souhaitée (1-4): ")
+            choice = input("\nEntrez l'option souhaitée (1-5): ")
             
                 
             if choice == '1':
@@ -141,6 +142,8 @@ class Ui:
                 
             elif choice == '5':
                 print("Fin")
+                pygame.quit()
+                sys.exit()
                 break #mettre un print lancement du jeu en sortie
             else:
                 print("Invalid choice. Please try again.")

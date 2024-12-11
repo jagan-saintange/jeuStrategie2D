@@ -1,4 +1,5 @@
 import pygame
+import sys
 
 GRID_SIZE = 21 # Taille de la grille
 CELL_SIZE = 30 # Taille d'une cellule (case)

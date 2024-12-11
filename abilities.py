@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from unit import *
+import sys
 
 # Classe générale dont les autres sous-classes hériteront
 class Competence(ABC):
@@ -25,7 +26,7 @@ class Competence(ABC):
             for event in pygame.event.get(): # On parcourt les événements en attente
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                     pygame.quit() # Fermeture de Pygame proprement
-                    exit() # Arrêt complet du programme
+                    sys.exit() # Arrêt complet du programme
                 elif event.type == pygame.KEYDOWN: # Dans le cas où l'utilisateur presse une touche
                     for c in competences_disponibles: # On parcourt les compétences disponibles (celles affichées à l'écran)
                         if event.key == touches_competences.get(c.nom): # On s'assure que la touche pressée correspond à celle associée à la compétence
@@ -67,7 +68,7 @@ class Competence(ABC):
                     for event in pygame.event.get(): # Gestion des évènements
                         if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                             pygame.quit() # Fermeture de Pygame proprement
-                            exit() # Arrêt complet du programme
+                            sys.exit() # Arrêt complet du programme
                         elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
                             if event.key == pygame.K_UP: # Si la flèche du haut (touches fléchées) est pressée
                                 direction = 'haut'
@@ -108,7 +109,7 @@ class Competence(ABC):
                     for event in pygame.event.get(): # Gestion des évènements
                         if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                             pygame.quit() # Fermeture de Pygame proprement
-                            exit() # Arrêt complet du programme
+                            sys.exit() # Arrêt complet du programme
                         elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
                             if event.key == pygame.K_LEFT: # Si la flèche gauche (touches fléchées) est pressée, le curseur se déplace à gauche
                                 curseur_x = max(0, curseur_x - 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
@@ -128,7 +129,7 @@ class Competence(ABC):
             for event in pygame.event.get(): # Gestion des évènements
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                     pygame.quit() # Fermeture de Pygame proprement
-                    exit() # Arrêt complet du programme
+                    sys.exit() # Arrêt complet du programme
                 elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
                     if event.key == pygame.K_LEFT: # Si la flèche gauche (touches fléchées) est pressée, le curseur se déplace à gauche
                         curseur_x = max(0, curseur_x - 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
@@ -155,8 +156,9 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.HPloss(self.dommage, utilisateur) # Dégâts immédiats (-15 PdV)
-                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné ! Il subira {self.dommage} PdV de dégâts pendant {self.duree} tours.")
+                #cible.HPloss(self.dommage, utilisateur) # Dégâts immédiats (-15 PdV)
+                utilisateur.attack(cible, self.dommage)
+                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné ! Il subira {self.dommage} PdV de dégâts bruts pendant {self.duree} tours.")
                 cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
@@ -185,8 +187,9 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for enemy in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
                         if enemy.x == zone_x and enemy.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
-                            enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés à/aux cible(s)
-                            interface.ajouter_message(f"{enemy.perso.nom} perd {self.dommage} points de vie.")
+                            #enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés à/aux cible(s)
+                            utilisateur.attack(enemy, self.dommage)
+                            #interface.ajouter_message(f"{enemy.perso.nom} perd {self.dommage} points de vie.")
                             if enemy.health <= 0: # Dans le cas où l'unité meurt
                                 game.enemy_units.remove(enemy) # Suppression de l'unité
                                 interface.ajouter_message(f"{enemy.perso.nom} a été éliminé.")
@@ -216,8 +219,9 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
             if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE: # On s'assure que la case est dans les limites de la grille (pour éviter les débordements)
                 for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
-                        enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
-                        interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")
+                        #enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
+                        utilisateur.attack(enemy, self.dommage)
+                        #interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")##
                         if enemy.health <= 0: # Dans le cas où l'unité meurt
                             game.enemy_units.remove(enemy) # Suppression de l'unité
                             interface.ajouter_message(f"{enemy.perso.nom} a été éliminé !")
@@ -231,7 +235,9 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.HPloss(self.dommage, utilisateur) # Inflige -10 PdV à l'unité cible
+                #cible.HPloss(self.dommage, utilisateur) # Inflige -10 PdV à l'unité cible
+                #utilisateur.attack(enemy, self.dommage)
+                cible.minusHP(10)
                 interface.ajouter_message(f"{cible.perso.nom} perd {self.dommage} points de vie à cause de Drain.")
                 utilisateur.health = min(utilisateur.max_health, utilisateur.health + self.dommage) # Régénère +10 PdV à l'unité attaquante.
                 interface.ajouter_message(f"{utilisateur.perso.nom} regagne {self.dommage} points de vie grâce à Drain.")

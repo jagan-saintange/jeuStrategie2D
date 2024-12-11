@@ -28,30 +28,35 @@ class Unit():
         
         Unit._instances.append(self) 
 
+    def interf(self, interface):
+        self.interface = interface
+
     def move(self, dx, dy, player_units, enemy_units):
         # Vérifie si l'unité est immobilisée
         if any(effet["effet"] == "immobilisé" for effet in self.effects):
             self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est paralysée et ne peut pas se déplacer.")
             return False # Déplacement impossible
-
-        # Vérifie si le déplacement reste dans les limites de la grille
-        new_x = self.x + dx
-        new_y = self.y + dy
-        if new_x < 0 or new_x >= GRID_SIZE or new_y < 0 or new_y >= GRID_SIZE: # Déplacement en dehors de la grille
-            return False
-
-        for unit in player_units + enemy_units:
-            if unit.x == new_x and unit.y == new_y: # Dans le cas où la case cible est occupée par une autre unité
-                self.x, unit.x = unit.x, self.x
-                self.y, unit.y = unit.y, self.y
-                return True # Swap réussi
-
-        # Si toutes les vérifications sont passées, déplacer l'unité
-        self.x = new_x
-        self.y = new_y
-        if self.interface:
-            self.interface.ajouter_message(f"Déplacement réussi vers ({self.x}, {self.y}).")
-        return True # Déplacement réussi
+        if self.current_move < self.nombre_deplacements:
+            if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
+                try_x = self.x + dx
+                try_y = self.y + dy
+                for enemy in enemy_units:
+                    if (enemy.x == try_x and enemy.y == try_y):
+                        print('déplacement impossible !')
+                        self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                        return 1
+                for player in player_units:
+                    if player.x == try_x and player.y == try_y:
+                        player.x, self.x = self.x, player.x
+                        player.y, self.y = self.y, player.y
+                        print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                        self.interface.ajouter_message(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                        return 0
+                self.x = try_x
+                self.y = try_y
+                self.current_move += 1
+                self.interface.ajouter_message(f"Déplacement réussi vers ({self.x}, {self.y}).")
+                return 0
 
     def attack(self, cible=None, dommage=None):
         """Attaque une unité cible."""
@@ -60,7 +65,7 @@ class Unit():
                 self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est désarmée.")
                 return # Empêche l'attaque
             if abs(self.x - cible.x) <= 1 and abs(self.y - cible.y) <= 1:
-                cible.attack_critique_esquive(self) # Dommages infligés
+                self.attack_critique_esquive(cible, dommage, self.interface) # Dommages infligés
                 
     def appliquer_effet(self, effet, duree, dommages = 0):
         for existing_effet in self.effects:
@@ -146,14 +151,19 @@ class Unit():
             print('la résistance est appliquée')
         return round(faiblesse + resistance)
     
+    def minusHP(self, degats_bruts): #attention ce n'est pas la variable minus_hp dans HPloss
+        self.health -= degats_bruts
     
-    def HPloss(self, degats_brut : int, other_unit, crit : bool = False, choix_stats = [False, False, 1]):
+    
+    def HPloss(self, degats_brut : int, other_unit, crit : bool = False, choix_stats = [False, False, 1], interface = None):
         multiplicateur = self.multiplicateur(other_unit, crit, choix_stats)
         #print(multiplicateur)
         degats = int((multiplicateur * degats_brut))
         comparaison = self.additionneur(other_unit, degats)
         minus_HP = -1 * (degats + comparaison)
+        print(degats_brut, interface)
         print(f"{self.perso.nom} de {self.team} passe de {self.health}", end='')
+        interface.ajouter_message(f"{self.perso.nom} perd {minus_HP} points de vie.")
         self.health += minus_HP
         if self.health <= 0:
             self.health = 0
@@ -192,7 +202,7 @@ class Unit():
         return faiblesse, resistance
     
 
-    def attack_critique_esquive(self, target, choix_stats=[False, False, 1]):  
+    def attack_critique_esquive(self, target, dommage, interface = None, choix_stats=[False, False, 1]):  
         LIM = 6
         crit = False
         total_dommages = 0  # Variable pour accumuler les dommages
@@ -204,24 +214,20 @@ class Unit():
             if "important" in resD20att[1]:
                 crit = True
                 print('coup critique !')
-                target.HPloss(30, self, crit, choix_stats)
-                total_dommages += 30
+                target.HPloss(dommage, self, crit, choix_stats, self.interface)
             elif "critique" in resD20att[1]:
                 resD20def = Unit.D20()
                 print(resD20def, 'est la TENTATIVE D ESQUIVE MIRACULEUSE de', self.perso.nom)
                 if resD20def[0] != 20:
                     crit = True
-                    target.HPloss(30, self, crit, choix_stats)
-                    total_dommages += 30
+                    target.HPloss(dommage, self, crit, choix_stats, self.interface)
                     if target.health > 0:
                         crit = False
                         choix_stats = [False, True, 1]
-                        target.HPloss(30, self, crit, choix_stats)
-                        total_dommages += 30
+                        target.HPloss(dommage, self, crit, choix_stats, self.interface)
                     print("réussite critique + attaque supp")
             else:
-                target.HPloss(30, self, crit, choix_stats)
-                total_dommages += 30
+                target.HPloss(dommage, self, crit, choix_stats, interface=self.interface)
 
         elif resD20att[0] <= LIM:
             resD20def = Unit.D20()
@@ -229,28 +235,23 @@ class Unit():
             if resD20def[0] > LIM:
                 if 'important' in resD20att[1] or 'important' in resD20def[1]:
                     choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
-                    self.HPloss(30, target, crit, choix_stats)
-                    total_dommages += 30
+                    self.HPloss(dommage, target, crit, choix_stats, target.interface)
                 elif "critique" in resD20def[1]:
                     resD20att2 = Unit.D20()
                     print(resD20att2, 'est l ULTIME jet de dé de l attaquant', self.perso.nom)
                     if resD20att2[0] != 20:
                         choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
-                        self.HPloss(30, target, crit, choix_stats)
-                        total_dommages += 30
+                        self.HPloss(dommage, target, crit, choix_stats, target.interface)
                         if self.health > 0:
                             choix_stats = [False, True, 1]
-                            self.HPloss(30, target, crit, choix_stats)
-                            total_dommages += 30
+                            self.HPloss(dommage, target, crit, choix_stats, target.interface)
                 else:
-                    target.HPloss(30, self, crit, choix_stats)
-                    total_dommages += 30
+                    self.HPloss(dommage, target, crit, choix_stats, interface = target.interface)
             else:
-                target.HPloss(30, self, crit, choix_stats)
-                total_dommages += 30
+                self.HPloss(dommage, target, crit, choix_stats, interface = target.interface)
 
         print('\nattaque terminée\n===================================\n')
-        return total_dommages  # Retourne les dommages totaux
+        return 0
 
     # Fonction permettant d'afficher l'unité sur l'écran:
     def draw_unit(self, screen):
@@ -558,7 +559,7 @@ fighter_biden = Aerien(perso=Naruto, x=-1, y=-1, health=100, team='undefined', a
 fighter_obama = Aerien(perso=Obama, x=-1, y=-1, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50)
 fighter_bush = Aerien(perso=Bush, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40)
 
-fighter_stop = Terrien(perso=Stop, x=-1, y=-1, health=150, team='undefined', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
+fighter_stop = Terrien(perso=Stop, x=-1, y=-1, health=150, team='undefined', attack_power=2, defense_power=10, agility_power=1, speed=0)  # Panneau statique
 fighter_danger = Terrien(perso=Danger, x=-1, y=-1, health=100, team='undefined', attack_power=3, defense_power=4, agility_power=2, speed=30)
 fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=-1, y=-1, health=100, team='undefined', attack_power=2, defense_power=3, agility_power=3, speed=30)
 fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=-1, y=-1, health=100, team='undefined', attack_power=1, defense_power=2, agility_power=2, speed=20)
