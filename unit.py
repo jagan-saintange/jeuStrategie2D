@@ -169,6 +169,7 @@ class Unit():
             self.health = 0
             print(f' à {self.health}')
             print(f'unité {self.perso.nom} de {self.team} est neutralisé')
+            interface.ajouter_message(f'unité {self.perso.nom} de {self.team} est neutralisé')
         else:
             print(f' à {self.health}')
         
@@ -205,8 +206,8 @@ class Unit():
     def attack_critique_esquive(self, target, dommage, interface = None, choix_stats=[False, False, 1]):  
         LIM = 6
         crit = False
-        total_dommages = 0  # Variable pour accumuler les dommages
-
+        self.interface.ajouter_message(f"============== [Début de l'attaque de {self.perso.nom}] ==============")
+        
         resD20att = Unit.D20()
         print(resD20att, 'est le res du jet de dé de l attaquant', self.perso.nom)
 
@@ -214,8 +215,10 @@ class Unit():
             if "important" in resD20att[1]:
                 crit = True
                 print('coup critique !')
+                self.interface.ajouter_message(f"{self.perso.nom} fait un coup critique !")
                 target.HPloss(dommage, self, crit, choix_stats, self.interface)
             elif "critique" in resD20att[1]:
+                self.interface.ajouter_message(f"{self.perso.nom} fait un COUP PARFAIT !")
                 resD20def = Unit.D20()
                 print(resD20def, 'est la TENTATIVE D ESQUIVE MIRACULEUSE de', self.perso.nom)
                 if resD20def[0] != 20:
@@ -224,19 +227,25 @@ class Unit():
                     if target.health > 0:
                         crit = False
                         choix_stats = [False, True, 1]
+                        self.interface.ajouter_message(f"{self.perso.nom} porte un second coup gratuit à {target.perso.nom} !")
                         target.HPloss(dommage, self, crit, choix_stats, self.interface)
                     print("réussite critique + attaque supp")
+                else:
+                    target.interface.ajouter_message(f"{target.perso.nom} fait UNE ESQUIVE MIRACULEUSE !")
             else:
                 target.HPloss(dommage, self, crit, choix_stats, interface=self.interface)
 
         elif resD20att[0] <= LIM:
+            self.interface.ajouter_message(f"Oh non, {self.perso.nom} rate son attaque !")
             resD20def = Unit.D20()
             print(resD20def, 'est le res du jet de dé du defenseur', target.perso.nom)
             if resD20def[0] > LIM:
                 if 'important' in resD20att[1] or 'important' in resD20def[1]:
                     choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
+                    target.interface.ajouter_message(f"{target.perso.nom} esquive et fait une CONTRE-ATTAQUE CRITIQUE !")
                     self.HPloss(dommage, target, crit, choix_stats, target.interface)
                 elif "critique" in resD20def[1]:
+                    target.interface.ajouter_message(f"{target.perso.nom} fait UNE CONTRE-ATTAQUE PARFAITE !")
                     resD20att2 = Unit.D20()
                     print(resD20att2, 'est l ULTIME jet de dé de l attaquant', self.perso.nom)
                     if resD20att2[0] != 20:
@@ -244,13 +253,17 @@ class Unit():
                         self.HPloss(dommage, target, crit, choix_stats, target.interface)
                         if self.health > 0:
                             choix_stats = [False, True, 1]
+                            target.interface.ajouter_message(f"{target.perso.nom} porte un second coup gratuit à {self.perso.nom} !")
                             self.HPloss(dommage, target, crit, choix_stats, target.interface)
+                    else:
+                            self.interface.ajouter_message(f"{self.perso.nom} fait UNE ESQUIVE MIRACULEUSE !")
                 else:
+                    target.interface.ajouter_message(f"{target.perso.nom} esquive et CONTRE-ATTAQUE !")
                     self.HPloss(dommage, target, crit, choix_stats, interface = target.interface)
-            else:
-                self.HPloss(dommage, target, crit, choix_stats, interface = target.interface)
-
+        
+        self.interface.ajouter_message(f"============== [Fin de l'attaque de {self.perso.nom}] ==============")
         print('\nattaque terminée\n===================================\n')
+        
         return 0
 
     # Fonction permettant d'afficher l'unité sur l'écran:
@@ -552,7 +565,7 @@ fighter_snoop = Aerien(perso=Bulbizarre, x=-1, y=-1, health=95, team='undefined'
 fighter_nietzsche = Terrien(perso=Clochette,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
 fighter_marx = Terrien(perso=Widow, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
 fighter_camus = Archer(perso=Mickey, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
-fighter_socrates = Terrien(perso=Donald, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
+fighter_socrates = Terrien(perso=Picsou, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
 
 fighter_trump = Aerien(perso=Luffy, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
 fighter_biden = Aerien(perso=Naruto, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)

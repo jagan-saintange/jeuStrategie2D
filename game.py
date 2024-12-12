@@ -72,24 +72,26 @@ class Game: # Classe pour représenter le jeu
     def handle_player_turn(self):
         """Tour du joueur"""
         for selected_unit in self.player_units:
+            
             has_acted = False  # Indicateur pour savoir si l'unité a agi ou non pendant ce tour
 
             # Gestion des effets actifs sur l'unité
             for effet in selected_unit.effects[:]:
                 if effet["effet"] == "poison":
                     #selected_unit.attack(dommage=effet["dommages"])
-                    selected_unit.minusHP(dommage = effet["dommages"])
+                    selected_unit.minusHP(effet["dommages"])
                 effet["duree"] -= 1
                 if effet["duree"] <= 0:
                     self.interface.ajouter_message(f"{selected_unit.perso.nom} n'est plus affectée par {effet['effet']}.")
                     selected_unit.effects.remove(effet)
 
             selected_unit.is_selected = True
-            self.flip_display(selected_unit)
-
+            
             # Étape 1 : Déplacement de l'unité
             max_deplacements = selected_unit.nombre_deplacements
-            self.interface.ajouter_message(f"À toi de jouer, {selected_unit.perso.nom} ! Déplacements totaux : {max_deplacements}")
+            self.interface.ajouter_message(f"################ À toi de jouer, {selected_unit.perso.nom} ! Déplacements totaux : {max_deplacements} ###############")
+            self.flip_display(selected_unit)
+            
             while not has_acted:
     
                     # Important: cette boucle permet de gérer les événements Pygame
@@ -204,7 +206,8 @@ class Game: # Classe pour représenter le jeu
                                                             self.interface.ajouter_message("Toutes les compétences ont été utilisées. Recharge des compétences...")
                                                             self.competences_utilisees.clear()
                                                     has_acted = True
-
+                                                    
+                                time.sleep(0.5)
                                 selected_unit.is_selected = False
 
                                 # Nettoyage des unités mortes
@@ -229,7 +232,7 @@ class Game: # Classe pour représenter le jeu
             for effet in enemy.effects[:]:
                 if effet["effet"] == "poison":
                     #enemy.attack(dommage = effet["dommages"]) # Applique les dégâts du poison
-                    enemy.minusHP(dommage = effet["dommages"])
+                    enemy.minusHP(effet["dommages"])
                 effet["duree"] -= 1 # Réduit la durée de l'effet
                 if effet["duree"] <= 0:
                     self.interface.ajouter_message(f"{enemy.team} unité à ({enemy.x}, {enemy.y}) n'est plus affectée par {effet['effet']}.")
@@ -326,7 +329,7 @@ def main():
     ui = Ui()
     player_units, enemy_units = ui.run_ui()
     print('chargement du jeu...')
-    time.sleep(0.2)
+    time.sleep(0.5)
     # Initialisation de Pygame
     pygame.init()
     # Instanciation de la fenêtre
@@ -344,7 +347,9 @@ def main():
                 sys.exit() # Arrêt complet du programme
 
         game.handle_player_turn()
+        time.sleep(0.5)
         game.handle_enemy_turn()
-
+        time.sleep(0.5)
+        
 if __name__ == "__main__":
     main()

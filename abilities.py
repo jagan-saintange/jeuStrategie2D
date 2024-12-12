@@ -220,6 +220,7 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
                 for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
                         #enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
+                        print(self.dommage)
                         utilisateur.attack(enemy, self.dommage)
                         #interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")##
                         if enemy.health <= 0: # Dans le cas où l'unité meurt

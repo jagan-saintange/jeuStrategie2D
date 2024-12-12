@@ -17,7 +17,7 @@ assets_path = {'Mario' : ".\\assets\\mario.png",
                'Clochette' : ".\\assets\\feeclochette.png",
                'Widow' : ".\\assets\\blackwidow.png",
                'Mickey' : ".\\assets\\mickey.png",
-               'Donald' : ".\\assets\\donald.png",
+               'Picsou' : ".\\assets\\donald.png",
                'Luffy' : ".\\assets\\luffy.png",
                'Naruto' : ".\\assets\\naruto.png",
                'Pikachu' : ".\\assets\\pikachu.png",
@@ -142,12 +142,12 @@ Bulbizarre = Personnage('Bulbizarre', 'WestCoast', 'plante')
 Clochette = Personnage('Clochette', 'philosophe', 'eau')
 Widow = Personnage('Widow', 'philosophe', 'feu')
 Mickey = Personnage('Mickey', 'philosophe', 'plante')
-Donald = Personnage('Donald', 'philosophe', 'plante')
+Picsou = Personnage('Picsou', 'philosophe', 'plante')
 
-Luffy = Personnage('Luffy', 'USA', 'feu', 'orange', 'président des états Unis')
-Naruto = Personnage('Naruto', 'USA', 'feu', 'vieux', 'président des états Unis')
-Obama = Personnage('Obama', 'USA', 'feu', 'noir', 'président des états Unis')
-Bush = Personnage('Bush (père et fils)', 'USA', 'feu', 'blancs', 'présidents des états Unis')
+Luffy = Personnage('Luffy', 'USA', 'feu')
+Naruto = Personnage('Naruto', 'USA', 'feu')
+Obama = Personnage('Obama', 'USA', 'feu')
+Bush = Personnage('Bush (père et fils)', 'USA', 'feu')
 
 Stop = Personnage('Stop', 'Panneaux de signalisation', 'feu', 'rond rouge, il est écrit "STOP" en gros dessus', 'est le panneau Stop')
 Danger = Personnage('Danger', 'Panneaux de signalisation', 'plante')
