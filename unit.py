@@ -40,6 +40,26 @@ class Unit():
             if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
                 try_x = self.x + dx
                 try_y = self.y + dy
+                #if not self.interface.passable(try_x, try_y):
+                #    print('Passage refusé !')
+                #    self.interface.ajouter_message(f"Passage refusé vers ({self.x}, {self.y}).")
+                #    return 1
+                if self in enemy_units:
+                    print("move d'un enemy")
+                    for enemy in enemy_units:
+                        if enemy.x == try_x and enemy.y == try_y:
+                            enemy.x, self.x = self.x, enemy.x
+                            enemy.y, self.y = self.y, enemy.y
+                            print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                            self.interface.ajouter_message(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                            return 0
+                        for player in player_units:
+                            if player.x == try_x and player.y == try_y:
+                                print('déplacement impossible !')
+                                self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                                return 1
+                        
+                               
                 for enemy in enemy_units:
                     if (enemy.x == try_x and enemy.y == try_y):
                         print('déplacement impossible !')
@@ -555,7 +575,7 @@ fighter_foxy = Aerien(perso=Deadpool, x=-1, y=-1, health=95, team='undefined', a
 fighter_eren = Terrien(perso=Mario, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
 fighter_armin = Archer(perso=Luigi, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
 fighter_mikasa = Aerien(perso=Peach, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
-fighter_levi = Aerien(perso=Yoshi, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
+fighter_levi = Aerien(perso=Toad, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
 
 fighter_dre = Terrien(perso=Pikachu, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
 fighter_eminem = Archer(perso=Charmander, x=-1, y=-1, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)

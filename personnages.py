@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 assets_path = {'Mario' : ".\\assets\\mario.png",    
                'Luigi' : ".\\assets\\luigi.png",
                'Peach' : ".\\assets\\peach.png", 
-               'Yoshi' : ".\\assets\\yoshi.png",
+               'Toad' : ".\\assets\\yoshi.png",
                'Batman' : ".\\assets\\batman.png",
                'Spiderman' : ".\\assets\\spiderman.png",
                'Captain' : ".\\assets\\captainamerica.png",
@@ -127,7 +127,7 @@ Neutral = Personnage('Neutral', 'Generic', 'plante')
 Mario = Personnage('Mario', 'SNK', 'feu')
 Luigi = Personnage('Luigi', 'SNK', 'eau')
 Peach = Personnage('Peach', 'SNK', 'feu')
-Yoshi = Personnage('Yoshi', 'SNK', 'eau')
+Toad = Personnage('Toad', 'SNK', 'eau')
 
 Batman = Personnage('Batman', 'FNAF', 'plante')
 Spiderman = Personnage('Spiderman', 'FNAF', 'feu')

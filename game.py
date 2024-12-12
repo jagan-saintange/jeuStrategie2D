@@ -55,7 +55,7 @@ class Game: # Classe pour représenter le jeu
         for unit in self.player_units + self.enemy_units: # Unités (alliées et ennemies)
             unit.draw_unit(self.screen)
         
-        if selected_unit != None:            
+        if selected_unit != None and selected_unit in self.enemy_units : #enlever le "and" si on veut le curseur sur le joueur aussi        
             self.curseur(selected_unit)
 
         self.interface.draw_foreground() # Objets au premier plan (arbre, sapin, tente, etc.)
@@ -134,9 +134,16 @@ class Game: # Classe pour représenter le jeu
                             
                             
                             if dx != 0 or dy != 0:
-                                selected_unit.move(dx, dy, self.player_units, self.enemy_units)
-                                print(f'il vous reste {selected_unit.nombre_deplacements - selected_unit.current_move} déplacements, pour cette unité')
                                 
+                                new_col = selected_unit.x + dx
+                                new_row = selected_unit.y + dy
+                                # On s'assure que la case est passable avant de permettre le déplacement
+                                if self.interface.passable(new_row, new_col):
+                                    selected_unit.move(dx, dy, self.player_units, self.enemy_units)
+                                else:
+                                    self.interface.ajouter_message("Zone bloquée. Prenez une autre direction.")
+                                
+                                print(f'il vous reste {selected_unit.nombre_deplacements - selected_unit.current_move} déplacements, pour cette unité')
                                 self.flip_display(selected_unit)
     
                             # Attaque (touche espace) met fin au tour
@@ -265,20 +272,27 @@ class Game: # Classe pour représenter le jeu
                     self.flip_display(enemy)
                     if essai : #tentatives suivante si le essai de else n'a pas fonctionné
                         if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
-                            break #si l'ennemi est portée, plus besoin de se déplacer
+                            print('essai 2')
+                            break #si l'ennemi est à portée, plus besoin de se déplacer
                         else:
                             for _ in range(LEVEL):
                                 dx, dy =0, 0
                                 while abs(dx+ dy)!=1:
                                     dx = random.randint(-1, 1)
                                     dy = random.randint(-1, 1)
-                                essai = enemy.move(dx, dy, self.enemy_units, self.player_units) #mouvement aléatoire pour essayer de se débloquer
-                                if essai :
-                                    break #si rien ne marche on ne bloque pas la partie
+                                new_col = enemy.x + dx
+                                new_row = enemy.y + dy
+                                    # On s'assure que la case est passable avant de permettre le déplacement
+                                if self.interface.passable(new_row, new_col):
+                                    print('essai 3')
+                                    essai = enemy.move(dx, dy, self.enemy_units, self.player_units) #mouvement aléatoire pour essayer de se débloquer
+                                    time.sleep(0.3)
+                            if essai :
+                                print('essai 4')
+                                break #si rien ne marche on ne bloque pas la partie
                 
                     else:   # l'algo appliquera ce else en premier      
-                    
-                        #on input l'ess
+                        
                         dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
                         dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
                         if abs(dx) - abs(dx) == 0:
@@ -291,11 +305,18 @@ class Game: # Classe pour représenter le jeu
                                     dx = 0
                                 else:
                                     dy = 0
+                               
                         #print(dx, dy)
-                        essai = enemy.move(dx, dy, self.enemy_units, self.player_units)
-                        self.flip_display(enemy)
-                        time.sleep(0.3)
+                        #for j in range(LEVEL):
+                            # On s'assure que la case est passable avant de permettre le déplacement
+                        if self.interface.passable(enemy.x + dx, enemy.y + dy):
+                            print('essai 1')
+                            essai = enemy.move(dx, dy, self.enemy_units, self.player_units)
+                            #time.sleep(0.3)
+                                #break
+                
                         #print(enemy.current_move)
+                
                     
                 enemy.current_move = 0
             self.interface.ajouter_message(f"L'unité a été déplacée à ({enemy.x}, {enemy.y}).")
@@ -320,7 +341,7 @@ class Game: # Classe pour représenter le jeu
             sys.exit() # Arrêt complet du programme # On s'assure que la condition de fin de jeu n'est pas remplie (victoire ou défaite)
     
     def curseur(self, selected_unit):
-        pygame.draw.rect(self.screen, GREEN, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 1)
+        pygame.draw.rect(self.screen, RED, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
             
             
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
@@ -347,9 +368,11 @@ def main():
                 sys.exit() # Arrêt complet du programme
 
         game.handle_player_turn()
-        time.sleep(0.5)
+        game.flip_display()
+        #time.sleep(0.5)
         game.handle_enemy_turn()
-        time.sleep(0.5)
+        game.flip_display()
+        #time.sleep(0.5)
         
 if __name__ == "__main__":
     main()
