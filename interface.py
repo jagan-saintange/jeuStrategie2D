@@ -73,6 +73,7 @@ class Interface:
     # Fonction qui s'assure qu'une case donnée de la grille "zone_passable" est accessible
     def passable(self, ligne, colonne):
         if 0 <= ligne < self.y and 0 <= colonne < self.x: # On s'assure que la position (ligne, colonne) est dans les limites de la grille ([0, self.y[ et [0, self.x[)
+            print(self.zone_passable[ligne][colonne])
             return self.zone_passable[ligne][colonne] # True si la case n'a pas été préalablement bloquée
         return False
 

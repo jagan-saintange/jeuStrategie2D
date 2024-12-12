@@ -47,23 +47,23 @@ class Unit():
                 if self in enemy_units:
                     print("move d'un enemy")
                     for enemy in enemy_units:
-                        if enemy.x == try_x and enemy.y == try_y:
+                        if enemy.x == try_x and enemy.y == try_y and self != enemy:
                             enemy.x, self.x = self.x, enemy.x
                             enemy.y, self.y = self.y, enemy.y
-                            print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
-                            self.interface.ajouter_message(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                            print(f'{self.perso.nom} swaps avec {enemy.perso.nom} !')
+                            self.interface.ajouter_message(f'{self.perso.nom} swaps avec {enemy.perso.nom} !')
                             return 0
                         for player in player_units:
                             if player.x == try_x and player.y == try_y:
                                 print('déplacement impossible !')
-                                self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                                #self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
                                 return 1
                         
                                
                 for enemy in enemy_units:
                     if (enemy.x == try_x and enemy.y == try_y):
                         print('déplacement impossible !')
-                        self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                        #self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
                         return 1
                 for player in player_units:
                     if player.x == try_x and player.y == try_y:

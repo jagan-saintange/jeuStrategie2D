@@ -108,14 +108,7 @@ class Game: # Classe pour représenter le jeu
                             if event.key == pygame.K_ESCAPE:  # Vérifier si la touche Échap est pressée
                                 pygame.quit()
                                 sys.exit()
-                        
-                        """
-                        # Gestion des touches du clavier
-                        if event.type == pygame.KEYDOWN:
-                            if event.key == pygame.K_TAB:
-                                game.toggle_inspect(selected_unit)
-                                self.flip_display()
-                        """
+
                         # Gestion des touches du clavier
                         if event.type == pygame.KEYDOWN:
     
@@ -268,6 +261,7 @@ class Game: # Classe pour représenter le jeu
                 
                 enemy.current_move = 0
                 essai = 0 #essai = 0 si le move est successful, si le move rate :  essai = 1. 0 et 1 sont aussi des bools  reconnus
+                print(target)
                 while enemy.current_move < enemy.nombre_deplacements:
                     self.flip_display(enemy)
                     if essai : #tentatives suivante si le essai de else n'a pas fonctionné
@@ -277,41 +271,52 @@ class Game: # Classe pour représenter le jeu
                         else:
                             for _ in range(LEVEL):
                                 dx, dy =0, 0
-                                while abs(dx+ dy)!=1:
-                                    dx = random.randint(-1, 1)
-                                    dy = random.randint(-1, 1)
+                                #while abs(dx+ dy)!=1:
+                                dx = random.randint(-1, 1)
+                                dy = random.randint(-1, 1)
                                 new_col = enemy.x + dx
                                 new_row = enemy.y + dy
+                                if dx !=0 and dy!=0:
+                                    if random.randint(0, 1) == 0:
+                                        dx = 0
+                                    else:
+                                        dy = 0
+                                            
                                     # On s'assure que la case est passable avant de permettre le déplacement
-                                if self.interface.passable(new_row, new_col):
-                                    print('essai 3')
+                                if enemy.interface.passable(new_row, new_col):
+                                    print('essai 3', new_row, new_col)
                                     essai = enemy.move(dx, dy, self.enemy_units, self.player_units) #mouvement aléatoire pour essayer de se débloquer
                                     time.sleep(0.3)
+                                else:    
+                                    essai = 1
+                                self.flip_display(enemy)
                             if essai :
-                                print('essai 4')
+                                print('essai 4', new_row, new_col)
                                 break #si rien ne marche on ne bloque pas la partie
                 
                     else:   # l'algo appliquera ce else en premier      
-                        
-                        dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
-                        dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
-                        if abs(dx) - abs(dx) == 0:
-                            if abs(enemy.x - target.x) > abs(enemy.y - target.y):
-                                dy = 0
-                            elif abs(enemy.x - target.x) < abs(enemy.y - target.y):
-                                dx = 0
-                            else:
+                        for _ in range(LEVEL*2):
+                            dx = 1 if enemy.x < target.x else -1 if enemy.x > target.x else 0
+                            dy = 1 if enemy.y < target.y else -1 if enemy.y > target.y else 0
+                            if dx !=0 and dy!=0:
                                 if random.randint(0, 1) == 0:
                                     dx = 0
                                 else:
                                     dy = 0
-                               
-                        #print(dx, dy)
-                        #for j in range(LEVEL):
-                            # On s'assure que la case est passable avant de permettre le déplacement
-                        if self.interface.passable(enemy.x + dx, enemy.y + dy):
-                            print('essai 1')
-                            essai = enemy.move(dx, dy, self.enemy_units, self.player_units)
+                            print(dx, dy)
+                            
+                            #print(dx, dy)
+                            #for j in range(LEVEL):
+                                # On s'assure que la case est passable avant de permettre le déplacement
+                            new_col = enemy.x + dx
+                            new_row = enemy.y + dy
+                            if enemy.interface.passable(new_row, new_col):
+                                print('essai 1',dx, dy)
+                                essai = enemy.move(dx, dy, self.enemy_units, self.player_units)
+                                time.sleep(0.3)
+                                if essai ==0:
+                                    break
+                            essai = 1
                             #time.sleep(0.3)
                                 #break
                 
