@@ -170,9 +170,8 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
 
-                dmg = cible.HPloss(self.dommage, utilisateur) # Dommages infligés à la cible
-                cible.health = cible.health - dmg
-                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné(e) ! L'unité subira {dmg} PdV de dégâts pendant {self.duree} tours.")
+                cible.minusHP(self.dommage) # Dommages infligés à la cible
+                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné(e) ! L'unité subira {self.dommage} PdV de dégâts pendant {self.duree} tours.")
 
                 cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
@@ -204,14 +203,16 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for enemy in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
                         if enemy.x == zone_x and enemy.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
-                            #enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés à/aux cible(s)
-                            utilisateur.attack(enemy, self.dommage)
+                            print(enemy.perso, 'est touché')
+                            interface.ajouter_message(f"{enemy.perso.nom} est touché")
+                            enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés à/aux cible(s)
+                            #utilisateur.attack(enemy, self.dommage)
                             #interface.ajouter_message(f"{enemy.perso.nom} perd {self.dommage} points de vie.")
-
+                            """
                             if enemy.health <= 0: # Dans le cas où l'unité meurt
                                 game.enemy_units.remove(enemy) # Suppression de l'unité
                                 interface.ajouter_message(f"{enemy.perso.nom} a été éliminé.")
-
+                            """
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, portée de 10 cases, pas d'effet persistant (-15 PdV immédiat)
@@ -239,17 +240,17 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
             if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE: # On s'assure que la case est dans les limites de la grille (pour éviter les débordements)
                 for enemy in game.enemy_units: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
-                        #enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
+                        enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
                         print(self.dommage)
-                        dmg = utilisateur.attack(enemy, self.dommage)
+                        interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile")
+                        #utilisateur.attack(enemy, self.dommage)
                         #interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")##
-
-                        interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile ({dmg} PdV).")
                         ennemis_touches.append(enemy)
-
+                        """
                         if enemy.health <= 0: # Dans le cas où l'unité meurt
                             game.enemy_units.remove(enemy) # Suppression de l'unité
                             interface.ajouter_message(f"{enemy.perso.nom} a été éliminé !")
+                        """
         if not ennemis_touches: # Dans le cas où les 5 cases du curseur ne contiennent aucun ennemi
             interface.ajouter_message("Aucune cible visée.")
 

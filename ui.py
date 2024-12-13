@@ -6,7 +6,7 @@ from abilities import *
 from personnages import *
 
 startposP1 = [(2,5), (3,5), (2,6), (3,6)]
-startposE = [(17,5), (18,5), (17,6), (18,6)]
+startposE = [(18,6), (6,19), (13,15), (19,13)]
 random.shuffle(startposP1)
 random.shuffle(startposE)
 
@@ -42,21 +42,6 @@ class Ui:
             i = random.choice(self.liste_combattants)
             #print(i)
             self.ajout(team, i)
-                
-        elif discriminant == 'personnage':
-            for i in self.liste_combattants:
-                #print(i.perso.nom, nom)
-                if i.perso.nom == nom:
-                    #print('BIP')
-                    self.ajout(team, i)
-
-    
-        elif discriminant == 'univers':
-            for i in self.liste_combattants:
-                if i.perso.univers == nom :
-                    i.perso.team = team 
-                    self.ajout(team, i)
-                
         else:
             raise TypeError("Sélection impossible, erreur input")
         
@@ -72,85 +57,16 @@ class Ui:
     
     
     def run_ui(self):
-        """Run the command-line interface for selecting fighters."""
-        equipe = 'player1'
+        """choix des persos au hasard"""
         print(self.liste_combattants)
-        continuer = (len(self.player1_units)  < 4) or (len(self.enemy_units) < 4)
-        while continuer:
-            
-            
-            print("\n\n===============\nMenu:")
-            print("1. Sélection par personnage")
-            print("2. Sélection par univers")
-            print("3. Sélection au hasard")
-            print("4. Afficher les équipes")
-            print("5. Fin")
-            
-            
+        while len(self.player1_units) <4 or len(self.enemy_units)<4:
             if len(self.player1_units) < 4:
-                equipe = 'player1'
-                print("\n===================\nc'est à player1 de choisir")    
-                
-            elif len(self.enemy_units) < 4 :
-                equipe = 'enemy'
-                print("\n==================\nc'est à l'adversaire de choisir")    
-                
-            
-            choice = input("\nEntrez l'option souhaitée (1-5): ")
-            
-                
-            if choice == '1':
-                
-                while len(self.player1_units) <4 and len(self.enemy_units)<4:
-                    print("Combattants dispo:")
-                    for i, fighter in enumerate(self.liste_combattants):
-                        #if fighter.team == 'undefined':  # Only show unselected fighters
-                        print(f"{i + 1}: {fighter.perso.nom} Team: {fighter.team})")
-                        
-                    fighter_choice = input("Entrez le numéro du combattant choisi: ")
-                    j = int(fighter_choice) - 1
-                    if 0 <= j < len(self.liste_combattants):
-                        print('BIP')
-                        selected_fighter = self.liste_combattants[j]
-                        print('\n',selected_fighter.perso.nom)
-                        if selected_fighter.team =='undefined':
-                            self.selector(equipe, 'personnage', selected_fighter.perso.nom)
-                        else:
-                            print("LE COMBATTANT EST DEJA SELECTIONÉ ! ")
-                        self.show_teams()
-                    else:
-                        print("NOMBRE INVALIDE")
-    
-            elif choice == '2':
-                universe_name = input("Entrez le nom de l'univers des persos à sélectionner': ")
-                self.selector(equipe, 'univers', universe_name)
-                self.show_teams()
-                equipe = 'enemy'
-                
-            elif choice == '3':
-                while len(self.player1_units) <4 or len(self.enemy_units)<4:
-
-                    if len(self.player1_units) < 4:
-                        self.selector('player1', 'hasard')
-                    elif len(self.enemy_units) < 4:
-                        equipe = 'enemy'    
-                        self.selector('enemy', 'hasard')
-                self.show_teams()
-                print('BEEP')
-            
-            elif choice == '4':
-                self.show_teams()
-                
-            elif choice == '5':
-                print("Fin")
-                pygame.quit()
-                sys.exit()
-                break #mettre un print lancement du jeu en sortie
-            else:
-                print("Invalid choice. Please try again.")
-            print('BEEP')
-            continuer = (len(self.player1_units) < 4) or (len(self.enemy_units) < 4)
-        
+                self.selector('player1', 'hasard')
+            elif len(self.enemy_units) < 4:
+                equipe = 'enemy'    
+                self.selector('enemy', 'hasard')
+        self.show_teams()
+        print('BEEP')
         print('choix validé, la partie va commencer. Les équipes sont les suivantes')
         self.show_teams()
         print('Bon fight !')

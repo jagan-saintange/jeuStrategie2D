@@ -369,7 +369,12 @@ class Game: # Classe pour représenter le jeu
                 while enemy.current_move < enemy.nombre_deplacements:
                     self.flip_display(enemy)
                     if essai : #tentatives suivante si le essai de else n'a pas fonctionné
-                        if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
+                        for combattant in self.player_units:
+                            oui = abs(enemy.x - combattant.x) <= 1 and abs(enemy.y - combattant.y) <= 1
+                            if oui: # un joueur à portée
+                                target = combattant #il devient le nouveau cible
+                                break # sors de la recherche de combattant
+                        if oui:
                             print('essai 2')
                             break #si l'ennemi est à portée, plus besoin de se déplacer
                         else:
@@ -462,12 +467,11 @@ class Game: # Classe pour représenter le jeu
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
 def main():
+    # Initialisation de Pygame
+    pygame.init()
     ui = Ui()
     player_units, enemy_units = ui.run_ui()
     print('chargement du jeu...')
-    time.sleep(0.5)
-    # Initialisation de Pygame
-    pygame.init()
     # Instanciation de la fenêtre
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Mon jeu de stratégie")

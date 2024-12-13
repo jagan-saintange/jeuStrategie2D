@@ -89,8 +89,7 @@ class Unit():
             if any(effet["effet"] == "désarmé" for effet in self.effects): # Dans le cas où l'utilisateur est désarmé
                 print(f"{self.perso.nom} est désarmé(e).")
                 return # Empêche l'attaque
-            if abs(self.x - cible.x) <= 1 and abs(self.y - cible.y) <= 1:
-                self.attack_critique_esquive(cible, dommage, self.interface) # Dommages infligés
+            self.attack_critique_esquive(cible, dommage, self.interface) # Dommages infligés
 
                 
     def appliquer_effet(self, effet, duree, dommages = 0):
@@ -172,9 +171,11 @@ class Unit():
         if comp[0]:
             faiblesse += degats
             print('la faiblesse est appliquée')
+            self.interface.ajouter_message(f'la faiblesse est appliquée')
         if comp[1]:
             resistance += -(degats/2) 
             print('la résistance est appliquée')
+            self.interface.ajouter_message(f'la resistance est appliquée')
         return round(faiblesse + resistance)
     
     def minusHP(self, degats_bruts): #attention ce n'est pas la variable minus_hp dans HPloss
@@ -188,7 +189,7 @@ class Unit():
         minus_HP = -1 * (degats + comparaison)
         print(degats_brut, interface)
         print(f"{self.perso.nom} de {self.team} passe de {self.health}", end='')
-        interface.ajouter_message(f"{self.perso.nom} perd {minus_HP} points de vie.")
+        self.interface.ajouter_message(f"{self.perso.nom} perd {minus_HP} points de vie.")
         if any(effet["effet"] == "bouclier" for effet in self.effects):
             minus_HP = 0  # Aucun point de vie perdu*
         self.health += minus_HP
@@ -196,7 +197,7 @@ class Unit():
             self.health = 0
             print(f' à {self.health}')
             print(f'unité {self.perso.nom} de {self.team} est neutralisé')
-            interface.ajouter_message(f'unité {self.perso.nom} de {self.team} est neutralisé')
+            self.interface.ajouter_message(f'unité {self.perso.nom} de {self.team} est neutralisé')
         
         else:
             multiplicateur = self.multiplicateur(other_unit, crit, choix_stats)
@@ -212,7 +213,7 @@ class Unit():
                 self.health = 0
                 print(f' à {self.health}')
                 print(f'unité {self.perso.nom} de {self.team} est neutralisé')
-                interface.ajouter_message(f'unité {self.perso.nom} de {self.team} est neutralisé')
+                self.interface.ajouter_message(f'unité {self.perso.nom} de {self.team} est neutralisé')
             else:
                 print(f' à {self.health}')
         return minus_HP
@@ -266,6 +267,7 @@ class Unit():
                 resD20def = Unit.D20()
                 print(resD20def, 'est la TENTATIVE D ESQUIVE MIRACULEUSE de', self.perso.nom)
                 if resD20def[0] != 20:
+                    target.interface.ajouter_message(f"{target.perso.nom} rate sa tentative d'esquive miraculeuse")
                     crit = True
                     target.HPloss(dommage, self, crit, choix_stats, self.interface)
                     if target.health > 0:
@@ -294,6 +296,7 @@ class Unit():
                     resD20att2 = Unit.D20()
                     print(resD20att2, 'est l ULTIME jet de dé de l attaquant', self.perso.nom)
                     if resD20att2[0] != 20:
+                        self.interface.ajouter_message(f"{self.perso.nom} rate sa tentative d'esquive miraculeuse")
                         choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
                         self.HPloss(dommage, target, crit, choix_stats, target.interface)
                         if self.health > 0:
