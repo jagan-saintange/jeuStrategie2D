@@ -178,7 +178,7 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
-class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles, portée de 2 cases, pas d'effet persistant (-40 PdV par cible présente dans le périmètre désigné)
+class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles, portée de 5 cases, pas d'effet persistant (-40 PdV par cible présente dans le périmètre désigné)
     def __init__(self):
         super().__init__("Pluie de projectiles", portee = 5, dommage = 40) # Portée de l'attaque = 5, dégâts infligés = -40 PdV/cible
 
