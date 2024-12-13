@@ -6,24 +6,18 @@ from abc import ABC, abstractmethod
 
 #Banques icones
 
-assets_path = {'Mario' : ".\\assets\\mario.png",    
-               'Luigi' : ".\\assets\\luigi.png",
-               'Peach' : ".\\assets\\peach.png", 
-               'Toad' : ".\\assets\\yoshi.png",
-               'Batman' : ".\\assets\\batman.png",
-               'Spiderman' : ".\\assets\\spiderman.png",
-               'Captain' : ".\\assets\\captainamerica.png",
-               'Deadpool' : ".\\assets\\deadpool.png",
-               'Clochette' : ".\\assets\\feeclochette.png",
-               'Widow' : ".\\assets\\blackwidow.png",
+
+assets_path = {'Toad' : ".\\assets\\toad.png",    
                'Mickey' : ".\\assets\\mickey.png",
-               'Picsou' : ".\\assets\\donald.png",
-               'Luffy' : ".\\assets\\luffy.png",
-               'Naruto' : ".\\assets\\naruto.png",
-               'Pikachu' : ".\\assets\\pikachu.png",
-               'Bulbizarre' : ".\\assets\\bulbizarre.png",
-               'Charmander' : ".\\assets\\charmander.png",
-               'Carapuce' : ".\\assets\\carapuce.png",}
+               'Minion' : ".\\assets\\minion.png",
+               'Mario' : ".\\assets\\mario.png",
+               'Luigi' : ".\\assets\\luigi.png",
+               'Peach' : ".\\assets\\peach.png",
+               'Sonic' : ".\\assets\\sonic.png",
+               'Clochette' : ".\\assets\\feeclochette.png",
+               'Alice' : ".\\assets\\alice.png",
+               'Pikachu' : ".\\assets\\pikachu.png",}
+
 
 #######################################################
 
@@ -124,38 +118,19 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
 #Personnages par univers
 Neutral = Personnage('Neutral', 'Generic', 'plante')
 
-Mario = Personnage('Mario', 'SNK', 'feu')
-Luigi = Personnage('Luigi', 'SNK', 'eau')
-Peach = Personnage('Peach', 'SNK', 'feu')
-Toad = Personnage('Toad', 'SNK', 'eau')
 
-Batman = Personnage('Batman', 'FNAF', 'plante')
-Spiderman = Personnage('Spiderman', 'FNAF', 'feu')
-Captain = Personnage('Captain', 'FNAF', 'eau')
-Deadpool = Personnage('Deadpool', 'FNAF', 'feu')
+Mario = Personnage('Mario', 'A', 'feu')
+Luigi = Personnage('Luigi', 'A', 'plante')
+Peach = Personnage('Peach', 'A', 'eau')
+Toad = Personnage('Toad', 'A', 'plante')
 
-Pikachu = Personnage('Pikachu', 'WestCoast', 'eau')
-Charmander = Personnage('Charmander', 'WestCoast', 'feu')
-Carapuce = Personnage('Carapuce', 'WestCoast', 'eau')
-Bulbizarre = Personnage('Bulbizarre', 'WestCoast', 'plante')
+Clochette = Personnage('Clochette', 'C', 'feu')
+Mickey = Personnage('Mickey', 'C', 'plante')
 
-Clochette = Personnage('Clochette', 'philosophe', 'eau')
-Widow = Personnage('Widow', 'philosophe', 'feu')
-Mickey = Personnage('Mickey', 'philosophe', 'plante')
-Picsou = Personnage('Picsou', 'philosophe', 'plante')
+Minion = Personnage('Minion', 'B', 'feu')
+Sonic = Personnage('Sonic', 'B', 'eau')
+Pikachu = Personnage('Pikachu', 'B', 'plante')
 
-Luffy = Personnage('Luffy', 'USA', 'feu')
-Naruto = Personnage('Naruto', 'USA', 'feu')
-Obama = Personnage('Obama', 'USA', 'feu')
-Bush = Personnage('Bush (père et fils)', 'USA', 'feu')
-
-Stop = Personnage('Stop', 'Panneaux de signalisation', 'feu', 'rond rouge, il est écrit "STOP" en gros dessus', 'est le panneau Stop')
-Danger = Personnage('Danger', 'Panneaux de signalisation', 'plante')
-tourner_a_droite = Personnage('tourner_a_droite', 'Panneaux de signalisation', 'plante')
-aire_de_repos = Personnage('aire_de_repos', 'Panneaux de signalisation', 'plante')
-
-perso1 = Personnage('number1', 'notre jeu', 'feu')
-perso2 = Personnage('number2', 'notre jeu', 'eau')
-perso3 = Personnage('number3', 'notre jeu', 'plante')
+Alice = Personnage('Alice', 'D', 'plante')
 
 #print(Personnage.get_instances())

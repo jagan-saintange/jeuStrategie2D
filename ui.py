@@ -2,6 +2,7 @@ import pygame
 import random
 import sys
 from unit import *
+from abilities import *
 from personnages import *
 
 startposP1 = [(2,5), (3,5), (2,6), (3,6)]
@@ -154,3 +155,20 @@ class Ui:
         self.show_teams()
         print('Bon fight !')
         return self.player1_units, self.enemy_units
+
+
+fighter_mario = Terrien(perso=Mario, x=-1, y=-1, health=120, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=30, competences=[Poison(), Drain(), Bouclier(), Vortex()], image_path = ".\\assets\\mario_stat.png") # MARIO
+fighter_luigi = Aerien(perso=Luigi, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=70, competences=[Poison(), Missile(), Bouclier(), Teleportation()], image_path = ".\\assets\\luigi_stat.png") # Luigi
+fighter_peach = Terrien(perso=Peach, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=40, competences=[PluieDeProjectiles(), Desarmement(), Bouclier(), Teleportation()], image_path = ".\\assets\\peach_stat.png") # PEACH
+fighter_toad = Terrien(perso=Toad, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50, competences=[PluieDeProjectiles(), Soin(), Paralysie(), Vortex()], image_path = ".\\assets\\toad_stat.png") # TOAD
+
+fighter_sonic = Aerien(perso=Sonic, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=5, speed=80, competences=[PluieDeProjectiles(), Paralysie(), Bouclier(), Vortex()], image_path = ".\\assets\\sonic_stat.png") # SONIC
+
+
+fighter_mickey = Archer(perso=Mickey, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75, competences=[Poison(), Drain(), Soin(), Teleportation()], image_path = ".\\assets\\mickey_stat.png") # MICKEY
+fighter_minion = Aerien(perso=Minion, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60, competences=[Poison(), Missile(), Soin(), Vortex()], image_path = ".\\assets\\minion_stat.png") # MINION
+
+fighter_pikachu = Terrien(perso=Pikachu, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50, competences=[Poison(), Missile(), Drain(), Vortex()], image_path = ".\\assets\\pikachu_stat.png") # PIKACHU
+
+fighter_clochette = Terrien(perso=Clochette, x=-1, y=-1, health=100, team='undefined', attack_power=6, defense_power=4, agility_power=2, speed=40, competences=[PluieDeProjectiles(), Paralysie(), Soin(), Teleportation()], image_path = ".\\assets\\clochette_stat.png") # CLOCHETTE
+fighter_alice = Archer(perso=Alice, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60, competences=[PluieDeProjectiles(), Drain(), Bouclier(), Teleportation()], image_path = ".\\assets\\alice_stat.png") # ALICE
