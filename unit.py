@@ -28,33 +28,55 @@ class Unit():
         
         Unit._instances.append(self) 
 
+    def interf(self, interface):
+        self.interface = interface
+
     def move(self, dx, dy, player_units, enemy_units):
         # Vérifie si l'unité est immobilisée
         if any(effet["effet"] == "immobilisé" for effet in self.effects):
             self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est paralysée et ne peut pas se déplacer.")
             return False # Déplacement impossible
-
-        # Vérifie si le déplacement reste dans les limites de la grille
-        new_x = self.x + dx
-        new_y = self.y + dy
-        if new_x < 0 or new_x >= GRID_SIZE or new_y < 0 or new_y >= GRID_SIZE: # Déplacement en dehors de la grille
-            return False
-
-        for unit in player_units + enemy_units:
-            if unit.x == new_x and unit.y == new_y: # Dans le cas où la case cible est occupée par une autre unité
-                if unit.team == self.team: # Cas où l'unité sur la case est une alliée
-                    self.x, unit.x = unit.x, self.x
-                    self.y, unit.y = unit.y, self.y
-                    return True # Swap réussi
-                else: # Cas où l'unité sur la case est une ennemie
-                    return False # Déplacement impossible
-
-        # Si toutes les vérifications sont passées, déplacer l'unité
-        self.x = new_x
-        self.y = new_y
-        if self.interface:
-            self.interface.ajouter_message(f"Déplacement réussi vers ({self.x}, {self.y}).")
-        return True # Déplacement réussi
+        if self.current_move < self.nombre_deplacements:
+            if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
+                try_x = self.x + dx
+                try_y = self.y + dy
+                #if not self.interface.passable(try_x, try_y):
+                #    print('Passage refusé !')
+                #    self.interface.ajouter_message(f"Passage refusé vers ({self.x}, {self.y}).")
+                #    return 1
+                if self in enemy_units:
+                    print("move d'un enemy")
+                    for enemy in enemy_units:
+                        if enemy.x == try_x and enemy.y == try_y and self != enemy:
+                            enemy.x, self.x = self.x, enemy.x
+                            enemy.y, self.y = self.y, enemy.y
+                            print(f'{self.perso.nom} swaps avec {enemy.perso.nom} !')
+                            self.interface.ajouter_message(f'{self.perso.nom} swaps avec {enemy.perso.nom} !')
+                            return 0
+                        for player in player_units:
+                            if player.x == try_x and player.y == try_y:
+                                print('déplacement impossible !')
+                                #self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                                return 1
+                        
+                               
+                for enemy in enemy_units:
+                    if (enemy.x == try_x and enemy.y == try_y):
+                        print('déplacement impossible !')
+                        #self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                        return 1
+                for player in player_units:
+                    if player.x == try_x and player.y == try_y:
+                        player.x, self.x = self.x, player.x
+                        player.y, self.y = self.y, player.y
+                        print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                        self.interface.ajouter_message(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                        return 0
+                self.x = try_x
+                self.y = try_y
+                self.current_move += 1
+                self.interface.ajouter_message(f"Déplacement réussi vers ({self.x}, {self.y}).")
+                return 0
 
     def attack(self, cible=None, dommage=None):
         """Attaque une unité cible."""
@@ -63,7 +85,7 @@ class Unit():
                 self.interface.ajouter_message(f"{self.team} unité à ({self.x}, {self.y}) est désarmée.")
                 return # Empêche l'attaque
             if abs(self.x - cible.x) <= 1 and abs(self.y - cible.y) <= 1:
-                cible.attack_critique_esquive(self) # Dommages infligés
+                self.attack_critique_esquive(cible, dommage, self.interface) # Dommages infligés
                 
     def appliquer_effet(self, effet, duree, dommages = 0):
         for existing_effet in self.effects:
@@ -149,19 +171,24 @@ class Unit():
             print('la résistance est appliquée')
         return round(faiblesse + resistance)
     
+    def minusHP(self, degats_bruts): #attention ce n'est pas la variable minus_hp dans HPloss
+        self.health -= degats_bruts
     
-    def HPloss(self, degats_brut : int, other_unit, crit : bool = False, choix_stats = [False, False, 1]):
+    def HPloss(self, degats_brut : int, other_unit, crit : bool = False, choix_stats = [False, False, 1], interface = None):
         multiplicateur = self.multiplicateur(other_unit, crit, choix_stats)
         #print(multiplicateur)
         degats = int((multiplicateur * degats_brut))
         comparaison = self.additionneur(other_unit, degats)
         minus_HP = -1 * (degats + comparaison)
+        print(degats_brut, interface)
         print(f"{self.perso.nom} de {self.team} passe de {self.health}", end='')
+        interface.ajouter_message(f"{self.perso.nom} perd {minus_HP} points de vie.")
         self.health += minus_HP
         if self.health <= 0:
             self.health = 0
             print(f' à {self.health}')
             print(f'unité {self.perso.nom} de {self.team} est neutralisé')
+            interface.ajouter_message(f'unité {self.perso.nom} de {self.team} est neutralisé')
         else:
             print(f' à {self.health}')
         
@@ -195,11 +222,11 @@ class Unit():
         return faiblesse, resistance
     
 
-    def attack_critique_esquive(self, target, choix_stats=[False, False, 1]):  
+    def attack_critique_esquive(self, target, dommage, interface = None, choix_stats=[False, False, 1]):  
         LIM = 6
         crit = False
-        total_dommages = 0  # Variable pour accumuler les dommages
-
+        self.interface.ajouter_message(f"============== [Début de l'attaque de {self.perso.nom}] ==============")
+        
         resD20att = Unit.D20()
         print(resD20att, 'est le res du jet de dé de l attaquant', self.perso.nom)
 
@@ -207,65 +234,75 @@ class Unit():
             if "important" in resD20att[1]:
                 crit = True
                 print('coup critique !')
-                target.HPloss(30, self, crit, choix_stats)
-                total_dommages += 30
+                self.interface.ajouter_message(f"{self.perso.nom} fait un coup critique !")
+                target.HPloss(dommage, self, crit, choix_stats, self.interface)
             elif "critique" in resD20att[1]:
+                self.interface.ajouter_message(f"{self.perso.nom} fait un COUP PARFAIT !")
                 resD20def = Unit.D20()
                 print(resD20def, 'est la TENTATIVE D ESQUIVE MIRACULEUSE de', self.perso.nom)
                 if resD20def[0] != 20:
                     crit = True
-                    target.HPloss(30, self, crit, choix_stats)
-                    total_dommages += 30
+                    target.HPloss(dommage, self, crit, choix_stats, self.interface)
                     if target.health > 0:
                         crit = False
                         choix_stats = [False, True, 1]
-                        target.HPloss(30, self, crit, choix_stats)
-                        total_dommages += 30
+                        self.interface.ajouter_message(f"{self.perso.nom} porte un second coup gratuit à {target.perso.nom} !")
+                        target.HPloss(dommage, self, crit, choix_stats, self.interface)
                     print("réussite critique + attaque supp")
+                else:
+                    target.interface.ajouter_message(f"{target.perso.nom} fait UNE ESQUIVE MIRACULEUSE !")
             else:
-                target.HPloss(30, self, crit, choix_stats)
-                total_dommages += 30
+                target.HPloss(dommage, self, crit, choix_stats, interface=self.interface)
 
         elif resD20att[0] <= LIM:
+            self.interface.ajouter_message(f"Oh non, {self.perso.nom} rate son attaque !")
             resD20def = Unit.D20()
             print(resD20def, 'est le res du jet de dé du defenseur', target.perso.nom)
             if resD20def[0] > LIM:
                 if 'important' in resD20att[1] or 'important' in resD20def[1]:
                     choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
-                    self.HPloss(30, target, crit, choix_stats)
-                    total_dommages += 30
+                    target.interface.ajouter_message(f"{target.perso.nom} esquive et fait une CONTRE-ATTAQUE CRITIQUE !")
+                    self.HPloss(dommage, target, crit, choix_stats, target.interface)
                 elif "critique" in resD20def[1]:
+                    target.interface.ajouter_message(f"{target.perso.nom} fait UNE CONTRE-ATTAQUE PARFAITE !")
                     resD20att2 = Unit.D20()
                     print(resD20att2, 'est l ULTIME jet de dé de l attaquant', self.perso.nom)
                     if resD20att2[0] != 20:
                         choix_stats = [False, True, 2] if Unit.ponderation(self.defense_power, target.agility_power) > Unit.ponderation(self.agility_power, target.agility_power) else [True, True, 2]
-                        self.HPloss(30, target, crit, choix_stats)
-                        total_dommages += 30
+                        self.HPloss(dommage, target, crit, choix_stats, target.interface)
                         if self.health > 0:
                             choix_stats = [False, True, 1]
-                            self.HPloss(30, target, crit, choix_stats)
-                            total_dommages += 30
+                            target.interface.ajouter_message(f"{target.perso.nom} porte un second coup gratuit à {self.perso.nom} !")
+                            self.HPloss(dommage, target, crit, choix_stats, target.interface)
+                    else:
+                            self.interface.ajouter_message(f"{self.perso.nom} fait UNE ESQUIVE MIRACULEUSE !")
                 else:
-                    target.HPloss(30, self, crit, choix_stats)
-                    total_dommages += 30
-            else:
-                target.HPloss(30, self, crit, choix_stats)
-                total_dommages += 30
-
+                    target.interface.ajouter_message(f"{target.perso.nom} esquive et CONTRE-ATTAQUE !")
+                    self.HPloss(dommage, target, crit, choix_stats, interface = target.interface)
+        
+        self.interface.ajouter_message(f"============== [Fin de l'attaque de {self.perso.nom}] ==============")
         print('\nattaque terminée\n===================================\n')
-        return total_dommages  # Retourne les dommages totaux
+        
+        return 0
 
     # Fonction permettant d'afficher l'unité sur l'écran:
     def draw_unit(self, screen):
-        color = (0, 0, 255) if self.team == 'player1' else (255, 0, 0)
+        filter_color = (0, 0, 255, 50) if self.team == 'player1' else (255, 0, 0, 50)
+
         if self.is_selected:
             pygame.draw.rect(screen, (0, 255, 0), (self.x * CELL_SIZE, self.y * CELL_SIZE, CELL_SIZE, CELL_SIZE))
 
         if self.perso.icon is not None:
             icon_scaled = pygame.transform.scale(self.perso.icon, (CELL_SIZE, CELL_SIZE))
             screen.blit(icon_scaled, (self.x * CELL_SIZE, self.y * CELL_SIZE))
+
+            # Création d'une surface de filtre semi-transparente de la taille de l'icône
+            filter_surface = pygame.Surface((CELL_SIZE, CELL_SIZE), pygame.SRCALPHA)  # Surface avec canal alpha
+            filter_surface.fill(filter_color)  # Applique la couleur du filtre
+            screen.blit(filter_surface, (self.x * CELL_SIZE, self.y * CELL_SIZE))  # Applique le filtre sur l'icône
+
         else:
-            pygame.draw.circle(screen, color, (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
+            pygame.draw.circle(screen, (255, 255, 255), (self.x * CELL_SIZE + CELL_SIZE // 2, self.y * CELL_SIZE + CELL_SIZE // 2), CELL_SIZE // 3)
 
         # Calcul et dessin de la barre de vie
         health_bar_width = CELL_SIZE // 2
@@ -537,24 +574,24 @@ fighter_foxy = Aerien(perso=Deadpool, x=-1, y=-1, health=95, team='undefined', a
 fighter_eren = Terrien(perso=Mario, x=-1, y=-1, health=120, team='undefined', attack_power=8, defense_power=6, agility_power=3, speed=50)
 fighter_armin = Archer(perso=Luigi, x=-1, y=-1, health=90, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=75)
 fighter_mikasa = Aerien(perso=Peach, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=4, speed=60)
-fighter_levi = Aerien(perso=Yoshi, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
+fighter_levi = Aerien(perso=Toad, x=-1, y=-1, health=95, team='undefined', attack_power=6, defense_power=4, agility_power=5, speed=85)
 
 fighter_dre = Terrien(perso=Pikachu, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
 fighter_eminem = Archer(perso=Charmander, x=-1, y=-1, health=90, team='undefined', attack_power=6, defense_power=3, agility_power=4, speed=60)
 fighter_fifty = Terrien(perso=Carapuce, x=-1, y=-1, health=100, team='undefined', attack_power=4, defense_power=5, agility_power=2, speed=40)
 fighter_snoop = Aerien(perso=Bulbizarre, x=-1, y=-1, health=95, team='undefined', attack_power=3, defense_power=4, agility_power=5, speed=70)
 
-fighter_nietzsche = Terrien(perso=Nietzsche,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
-fighter_marx = Terrien(perso=Marx, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
-fighter_camus = Archer(perso=Camus, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
-fighter_socrates = Terrien(perso=Socrates, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
+fighter_nietzsche = Terrien(perso=Clochette,  x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=50)
+fighter_marx = Terrien(perso=Widow, x=-1, y=-1, health=110, team='undefined', attack_power=6, defense_power=5, agility_power=2, speed=45)
+fighter_camus = Archer(perso=Mickey, x=-1, y=-1, health=95, team='undefined', attack_power=4, defense_power=3, agility_power=4, speed=60)
+fighter_socrates = Terrien(perso=Picsou, x=-1, y=-1, health=105, team='undefined', attack_power=5, defense_power=5, agility_power=3, speed=50)
 
-fighter_trump = Aerien(perso=Trump, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
-fighter_biden = Aerien(perso=Biden, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
+fighter_trump = Aerien(perso=Luffy, x=-1, y=-1, health=110, team='undefined', attack_power=7, defense_power=5, agility_power=2, speed=50)
+fighter_biden = Aerien(perso=Naruto, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=3, speed=45)
 fighter_obama = Aerien(perso=Obama, x=-1, y=-1, health=105, team='undefined', attack_power=6, defense_power=5, agility_power=3, speed=50)
 fighter_bush = Aerien(perso=Bush, x=-1, y=-1, health=100, team='undefined', attack_power=5, defense_power=4, agility_power=2, speed=40)
 
-fighter_stop = Terrien(perso=Stop, x=-1, y=-1, health=150, team='undefined', attack_power=0, defense_power=10, agility_power=1, speed=0)  # Panneau statique
+fighter_stop = Terrien(perso=Stop, x=-1, y=-1, health=150, team='undefined', attack_power=2, defense_power=10, agility_power=1, speed=0)  # Panneau statique
 fighter_danger = Terrien(perso=Danger, x=-1, y=-1, health=100, team='undefined', attack_power=3, defense_power=4, agility_power=2, speed=30)
 fighter_tourner_a_droite = Terrien(perso=tourner_a_droite, x=-1, y=-1, health=100, team='undefined', attack_power=2, defense_power=3, agility_power=3, speed=30)
 fighter_aire_de_repos = Terrien(perso=aire_de_repos, x=-1, y=-1, health=100, team='undefined', attack_power=1, defense_power=2, agility_power=2, speed=20)

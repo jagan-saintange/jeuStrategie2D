@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from unit import *
+import sys
 
 # Classe générale dont les autres sous-classes hériteront
 class Competence(ABC):
@@ -25,7 +26,7 @@ class Competence(ABC):
             for event in pygame.event.get(): # On parcourt les événements en attente
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                     pygame.quit() # Fermeture de Pygame proprement
-                    exit() # Arrêt complet du programme
+                    sys.exit() # Arrêt complet du programme
                 elif event.type == pygame.KEYDOWN: # Dans le cas où l'utilisateur presse une touche
                     for c in competences_disponibles: # On parcourt les compétences disponibles (celles affichées à l'écran)
                         if event.key == touches_competences.get(c.nom): # On s'assure que la touche pressée correspond à celle associée à la compétence
@@ -51,7 +52,7 @@ class Competence(ABC):
     def selectionner_cible(utilisateur, game, competence = None):
         curseur_x, curseur_y = utilisateur.x, utilisateur.y # Coordonnées du curseur initialisées avec les coordonnées actuelles de l'utilisateur
         if competence:
-            if competence.nom in ["Soin", "Bouclier", "Téléportation"]: # S'il s'agit des compétences "Bouclier", "Soin" ou "Téléportation", pas de sélection extérieure
+            if competence.nom in ["Soin", "Bouclier", "Vortex", "Téléportation"]: # S'il s'agit des compétences "Bouclier", "Soin" ou "Téléportation", pas de sélection extérieure
                 return utilisateur
             elif competence.nom == "Missile": # Sélection d'une ligne de 5 cases (horizontale ou verticale) pour la compétence "Missile"
                 direction = None # Variable dans laquelle on stocke la direction choisie par l'utilisateur
@@ -67,7 +68,7 @@ class Competence(ABC):
                     for event in pygame.event.get(): # Gestion des évènements
                         if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                             pygame.quit() # Fermeture de Pygame proprement
-                            exit() # Arrêt complet du programme
+                            sys.exit() # Arrêt complet du programme
                         elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
                             if event.key == pygame.K_UP: # Si la flèche du haut (touches fléchées) est pressée
                                 direction = 'haut'
@@ -108,7 +109,7 @@ class Competence(ABC):
                     for event in pygame.event.get(): # Gestion des évènements
                         if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                             pygame.quit() # Fermeture de Pygame proprement
-                            exit() # Arrêt complet du programme
+                            sys.exit() # Arrêt complet du programme
                         elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
                             if event.key == pygame.K_LEFT: # Si la flèche gauche (touches fléchées) est pressée, le curseur se déplace à gauche
                                 curseur_x = max(0, curseur_x - 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
@@ -128,7 +129,7 @@ class Competence(ABC):
             for event in pygame.event.get(): # Gestion des évènements
                 if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
                     pygame.quit() # Fermeture de Pygame proprement
-                    exit() # Arrêt complet du programme
+                    sys.exit() # Arrêt complet du programme
                 elif event.type == pygame.KEYDOWN: # Gestion des touches du clavier
                     if event.key == pygame.K_LEFT: # Si la flèche gauche (touches fléchées) est pressée, le curseur se déplace à gauche
                         curseur_x = max(0, curseur_x - 1) # Restreint le curseur aux bordures de la grille (axes des abscisses)
@@ -155,8 +156,9 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.HPloss(self.dommage, utilisateur) # Dégâts immédiats (-15 PdV)
-                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné ! Il subira {self.dommage} PdV de dégâts pendant {self.duree} tours.")
+                #cible.HPloss(self.dommage, utilisateur) # Dégâts immédiats (-15 PdV)
+                utilisateur.attack(cible, self.dommage)
+                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné ! Il subira {self.dommage} PdV de dégâts bruts pendant {self.duree} tours.")
                 cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
@@ -167,7 +169,8 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
 
 class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles, portée de 2 cases, pas d'effet persistant (-40 PdV par cible présente dans le périmètre désigné)
     def __init__(self):
-        super().__init__("Pluie de projectiles", portee = 5, dommage = 60) # Portée de l'attaque = 5, dégâts infligés = -40 PdV/cible
+
+        super().__init__("Pluie de projectiles", portee = 5, dommage = 60) # Portée de l'attaque = 5, dégâts infligés = -60 PdV/cible
 
     def utiliser(self, utilisateur, cible, game, interface):
         if not isinstance(cible, Unit): # On s'assure que la cible est bien une unité
@@ -185,8 +188,9 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for enemy in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
                         if enemy.x == zone_x and enemy.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
-                            enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés à/aux cible(s)
-                            interface.ajouter_message(f"{enemy.perso.nom} perd {self.dommage} points de vie.")
+                            #enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés à/aux cible(s)
+                            utilisateur.attack(enemy, self.dommage)
+                            #interface.ajouter_message(f"{enemy.perso.nom} perd {self.dommage} points de vie.")
                             if enemy.health <= 0: # Dans le cas où l'unité meurt
                                 game.enemy_units.remove(enemy) # Suppression de l'unité
                                 interface.ajouter_message(f"{enemy.perso.nom} a été éliminé.")
@@ -195,7 +199,7 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
 
 class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, portée de 10 cases, pas d'effet persistant (-15 PdV immédiat)
     def __init__(self):
-        super().__init__("Missile", portee = 5, dommage = 45) # Portée de l'attaque = 5, dégâts infligés = -15 PdV/cible
+        super().__init__("Missile", portee = 5, dommage = 45) # Portée de l'attaque = 5, dégâts infligés = -45 PdV/cible
 
     def utiliser(self, utilisateur, direction, game, interface):
         if direction not in ['haut', 'bas', 'gauche', 'droite']: # On s'assure que la direction choisie est valide (4 directions possibles)
@@ -216,8 +220,10 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
             if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE: # On s'assure que la case est dans les limites de la grille (pour éviter les débordements)
                 for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
-                        enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
-                        interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")
+                        #enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
+                        print(self.dommage)
+                        utilisateur.attack(enemy, self.dommage)
+                        #interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")##
                         if enemy.health <= 0: # Dans le cas où l'unité meurt
                             game.enemy_units.remove(enemy) # Suppression de l'unité
                             interface.ajouter_message(f"{enemy.perso.nom} a été éliminé !")
@@ -231,7 +237,9 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.HPloss(self.dommage, utilisateur) # Inflige -10 PdV à l'unité cible.
+                #cible.HPloss(self.dommage, utilisateur) # Inflige -10 PdV à l'unité cible
+                #utilisateur.attack(enemy, self.dommage)
+                cible.minusHP(10)
                 interface.ajouter_message(f"{cible.perso.nom} perd {self.dommage} points de vie à cause de Drain.")
                 utilisateur.health = min(utilisateur.max_health, utilisateur.health + self.dommage) # Régénère +10 PdV à l'unité attaquante.
                 interface.ajouter_message(f"{utilisateur.perso.nom} regagne {self.dommage} points de vie grâce à Drain.")
@@ -310,12 +318,17 @@ class Vortex(Competence): # Compétence passive : toutes les cibles ennemies, po
         super().__init__("Vortex", portee = -1) # Portée vaut -1 pour indiquer qu'aucune limitation de portée n'est appliquée
 
     def utiliser(self, utilisateur, cible, game, interface):
-        if cible is None or not hasattr(cible, 'x') or not hasattr(cible, 'y'): # On s'assure qu'une case a bien été spécifiée
-            interface.ajouter_message("Erreur : Vortex nécessite une case cible valide.") # Message d'erreur si ce n'est pas le cas
-            return
-        for unit in game.enemy_units: # On parcourt toutes les unités ennemies présentes sur le plateau
-            unit.x, unit.y = cible.x, cible.y # Déplacement de chaque unité sur les coordonnées de la case cible (cible.x, cible.y)
-            interface.ajouter_message(f"Vortex activé: regroupement de toutes les unités ennemies sur la case ({cible.x}, {cible.y}).") # Activation du Vortex
+        while True: # Boucle qui tourne jusqu'à ce qu'une case valide soit sélectionnée
+            nouvelle_position = Competence.selectionner_cible(utilisateur, game)
+            if nouvelle_position:
+                if interface.passable(nouvelle_position.y, nouvelle_position.x) == False:
+                    interface.ajouter_message("Erreur : Vortex nécessite une case cible valide.") # Message d'erreur si ce n'est pas le cas
+                    continue
+                else:
+                    for unit in game.enemy_units: # On parcourt toutes les unités ennemies présentes sur le plateau
+                        unit.x, unit.y = nouvelle_position.x, nouvelle_position.y # Déplacement de chaque unité sur les coordonnées de la case cible (cible.x, cible.y)
+                    interface.ajouter_message(f"Vortex activé: regroupement de toutes les unités ennemies sur la case ({cible.x}, {cible.y}).") # Activation du Vortex
+                    break
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -323,15 +336,15 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
     def __init__(self):
         super().__init__("Téléportation", portee = -1) # Portée vaut -1 pour indiquer qu'aucune limitation de portée n'est appliquée
 
-    def utiliser(self, utilisateur, cible, game, interface): # "Cible" n'est pas utilisé ici, car la téléportation est personnelle
-        nouvelle_position = Competence.selectionner_cible(utilisateur, game) # Méthode du jeu qui permet au joueur de choisir une nouvelle position
+    def utiliser(self, utilisateur, cible, game, interface):
+        while True: # Boucle qui tourne jusqu'à ce qu'une case valide soit sélectionnée
+            nouvelle_position = Competence.selectionner_cible(utilisateur, game)
 
-        if nouvelle_position: # Si une nouvelle position est sélectionnée
-            if not interface.passable(nouvelle_position.x, nouvelle_position.y): # On s'assure que la case soit lbre d'accès
-                interface.ajouter_message(f"Impossible d'accéder la case de coordonnées ({nouvelle_position.x}, {nouvelle_position.y}). Téléportation annulée.")
-                return
-            else:
-                utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
-                interface.ajouter_message(f"{utilisateur.perso.nom} a été téléporté en ({utilisateur.x}, {utilisateur.y}).")
-        else: # Si aucune nouvelle position n'est sélectionnée
-            interface.ajouter_message("Téléportation annulée.")
+            if nouvelle_position: # Dans le cas où une case est sélectionnée
+                if interface.passable(nouvelle_position.y, nouvelle_position.x) == False: # On s'assure que la case soit libre d'accès
+                    interface.ajouter_message(f"Impossible d'accéder à la case de coordonnées ({nouvelle_position.x}, {nouvelle_position.y}).")
+                    continue # L'utilisateur doit sélectionner une autre case
+                else: # Dans le cas où la case n'est pas "bloquée"
+                    utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
+                    interface.ajouter_message(f"{utilisateur.perso.nom} a été téléporté en ({utilisateur.x}, {utilisateur.y}).")
+                    break # Une fois la téléportation effectuée, on quitte la boucle

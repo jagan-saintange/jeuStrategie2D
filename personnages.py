@@ -9,11 +9,17 @@ from abc import ABC, abstractmethod
 assets_path = {'Mario' : ".\\assets\\mario.png",    
                'Luigi' : ".\\assets\\luigi.png",
                'Peach' : ".\\assets\\peach.png", 
-               'Yoshi' : ".\\assets\\yoshi.png",
+               'Toad' : ".\\assets\\yoshi.png",
                'Batman' : ".\\assets\\batman.png",
                'Spiderman' : ".\\assets\\spiderman.png",
                'Captain' : ".\\assets\\captainamerica.png",
                'Deadpool' : ".\\assets\\deadpool.png",
+               'Clochette' : ".\\assets\\feeclochette.png",
+               'Widow' : ".\\assets\\blackwidow.png",
+               'Mickey' : ".\\assets\\mickey.png",
+               'Picsou' : ".\\assets\\donald.png",
+               'Luffy' : ".\\assets\\luffy.png",
+               'Naruto' : ".\\assets\\naruto.png",
                'Pikachu' : ".\\assets\\pikachu.png",
                'Bulbizarre' : ".\\assets\\bulbizarre.png",
                'Charmander' : ".\\assets\\charmander.png",
@@ -121,7 +127,7 @@ Neutral = Personnage('Neutral', 'Generic', 'plante')
 Mario = Personnage('Mario', 'SNK', 'feu')
 Luigi = Personnage('Luigi', 'SNK', 'eau')
 Peach = Personnage('Peach', 'SNK', 'feu')
-Yoshi = Personnage('Yoshi', 'SNK', 'eau')
+Toad = Personnage('Toad', 'SNK', 'eau')
 
 Batman = Personnage('Batman', 'FNAF', 'plante')
 Spiderman = Personnage('Spiderman', 'FNAF', 'feu')
@@ -133,15 +139,15 @@ Charmander = Personnage('Charmander', 'WestCoast', 'feu')
 Carapuce = Personnage('Carapuce', 'WestCoast', 'eau')
 Bulbizarre = Personnage('Bulbizarre', 'WestCoast', 'plante')
 
-Nietzsche = Personnage('Nietzsche', 'philosophe', 'eau')
-Marx = Personnage('Marx', 'philosophe', 'feu')
-Camus = Personnage('Camus', 'philosophe', 'plante')
-Socrates = Personnage('Socrates', 'philosophe', 'plante')
+Clochette = Personnage('Clochette', 'philosophe', 'eau')
+Widow = Personnage('Widow', 'philosophe', 'feu')
+Mickey = Personnage('Mickey', 'philosophe', 'plante')
+Picsou = Personnage('Picsou', 'philosophe', 'plante')
 
-Trump = Personnage('Trump', 'USA', 'feu', 'orange', 'président des états Unis')
-Biden = Personnage('Biden', 'USA', 'feu', 'vieux', 'président des états Unis')
-Obama = Personnage('Obama', 'USA', 'feu', 'noir', 'président des états Unis')
-Bush = Personnage('Bush (père et fils)', 'USA', 'feu', 'blancs', 'présidents des états Unis')
+Luffy = Personnage('Luffy', 'USA', 'feu')
+Naruto = Personnage('Naruto', 'USA', 'feu')
+Obama = Personnage('Obama', 'USA', 'feu')
+Bush = Personnage('Bush (père et fils)', 'USA', 'feu')
 
 Stop = Personnage('Stop', 'Panneaux de signalisation', 'feu', 'rond rouge, il est écrit "STOP" en gros dessus', 'est le panneau Stop')
 Danger = Personnage('Danger', 'Panneaux de signalisation', 'plante')
