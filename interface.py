@@ -3,7 +3,7 @@ import pygame
 GRID_SIZE = 21 # Taille de la grille
 CELL_SIZE = 30 # Taille d'une cellule (case)
 WIDTH = GRID_SIZE * CELL_SIZE + 625 # Augmentation de l'espace pour afficher les compétences
-HEIGHT = GRID_SIZE * CELL_SIZE
+HEIGHT = GRID_SIZE * CELL_SIZE # Hauteur de la fenêtre
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -40,7 +40,7 @@ class Interface:
 
         # Surfaces pour les éléments de premier plan (arbre, sapin, tente, etc.) ainsi que la grille:
         self.grid_surface = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
-        self.foreground_surface = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
+        self.foreground_surface = pygame.Surface((self.x * self.a, self.y * self.a), pygame.SRCALPHA)
 
         # Définir les cases bloquées
         self.define_blocked_areas()
@@ -107,45 +107,53 @@ class Interface:
         for col in range(self.x + 1): # Parcours des colonnes de la grille (x+1 afin d'nclure les bords)
             pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (col * self.a, 0), (col * self.a, self.y * self.a)) # Surface, couleur, coordonnées de départ, coordonnées d'arrivée
 
-    # Fonction qui affiche les compétences disponibles et leurs touches associées à droite du plateau de jeu
-    def afficher_competences(self, screen, competences):
-        pygame.draw.rect(screen, BLACK, (GRID_SIZE * CELL_SIZE, 0, WIDTH - GRID_SIZE * CELL_SIZE, HEIGHT)) # On efface la zone des compétences
-        x = 640 # Coordonnée x de la position de départ pour l'affichage
-        y = 10  # Coordonnée y de la position de départ pour l'affichage
+    def afficher_statistiques(self, screen, image_path):
+        #pygame.draw.rect(screen, BLACK, (GRID_SIZE * CELL_SIZE, 0, WIDTH - GRID_SIZE * CELL_SIZE, HEIGHT))  # Efface la zone
+        
+        # Efface la zone (rectangle noir remplacé par l'image)
+        rect_x = GRID_SIZE * CELL_SIZE
+        rect_y = -10
+        rect_width = WIDTH - GRID_SIZE * CELL_SIZE
+        rect_height = HEIGHT - 250
 
-        largeur_max_touche = max(self.font_competences.size(pygame.key.name(touche_code).upper())[0] for touche_code in self.game.touches_competences.values() if touche_code is not None)
-        for competence in competences: # On parcourt la liste des compétences disponibles à afficher
-            touche_code = self.game.touches_competences.get(competence.nom, None) # Code numérique des touches
-            if touche_code is not None: # Dans le cas où la touche est associée à une compétence
-                touche = pygame.key.name(touche_code).upper() # Conversion du code en lettre majuscule
-                espace = largeur_max_touche + 10 # Espace entre les touches et la colonne des compétences
-            surface_touche = self.font_competences.render(touche, True, (255, 255, 255))
-            surface_competence = self.font_competences.render(competence.nom, True, (255, 255, 255))
-            screen.blit(surface_touche, (x, y)) # Affichage des touches à l'écran, aux coordonnées (x, y)
-            screen.blit(surface_competence, (x + espace, y)) # Affichage des compétences à l'écran
-            y += 20 # Passage à la ligne pour afficher la compétence suivante
+        if image_path:
+            player_image = pygame.image.load(image_path)
+            # Redimensionne l'image pour qu'elle couvre toute la zone
+            resized_image = pygame.transform.scale(player_image, (rect_width, rect_height))
+            screen.blit(resized_image, (rect_x, rect_y))
 
     def afficher_messages(self, screen):
         x_zone = GRID_SIZE * CELL_SIZE # Coordonnée x du début de la zone des actions
-        y_zone = (HEIGHT // 2) - 100 # Coordonnée y du début de la zone des actions
+        y_zone = (HEIGHT // 2) - 77 # Coordonnée y du début de la zone des actions
         largeur_zone = WIDTH - GRID_SIZE * CELL_SIZE # Largeur de la zone des actions
-        hauteur_zone = HEIGHT // 2 # Hauteur de la zone des actions
+        hauteur_zone = HEIGHT // 2 + 100 # Hauteur de la zone des actions
+
         pygame.draw.rect(screen, (0, 0, 0), (x_zone, y_zone, largeur_zone, hauteur_zone)) # Fond noir
         pygame.draw.line(screen, (255, 255, 255), (x_zone, y_zone), (WIDTH, y_zone), 2) # Ligne de séparation
 
-        y = y_zone + 10 # Position de départ pour l'affichage des actions
-        for i, message in enumerate(self.messages[-self.max_messages:]): # On parcourt les messages générés jusqu'à atteindre la limite (ici, max_message = 20)
-            surface = self.font_actions.render(message, True, (255, 255, 255)) # Police d'écriture utilisée
-            screen.blit(surface, (x_zone + 10, y + i * 20)) # Affichage de l'action à l'écran, à la position (x, y) donnée
+        y = y_zone + 10  # Position de départ pour l'affichage des actions
+        for i, message in enumerate(self.messages[-self.max_messages:]): # Affichage des derniers messages
+            if isinstance(message, tuple): # Si le message est un tuple (texte, couleur)
+                texte, couleur = message
+            else: # Sinon, afficher en blanc par défaut
+                texte, couleur = message, (255, 255, 255)
+
+            surface = self.font_actions.render(texte, True, couleur) # On génère le texte avec la couleur
+            screen.blit(surface, (x_zone + 10, y + i * 19)) # Affichage le texte
 
     def ajouter_message(self, message):
         self.messages.append(message) # Ajout d'un nouveau message à la liste des messages (self.messages)
         if len(self.messages) > 100: # Dans le cas où le nombre total de messages dépasse 100
             self.messages.pop(0) # Suppression du message le plus ancien (d'index 0)
 
-    def afficher_interface(self, competences_disponibles, touches_competences, messages):
-        pygame.draw.rect(self.screen, (0, 0, 0), (GRID_SIZE * CELL_SIZE, 0, self.WIDTH - GRID_SIZE * CELL_SIZE + 500, self.HEIGHT))
+    # Fonction pour ajouter un message avec retour à la ligne dans Pygame
+    def ajouter_message_multiligne(self, message):
+        lignes = message.split("\n") # Diviser le message par ligne
+        for ligne in lignes:
+            self.ajouter_message(ligne) # Ajout de chaque ligne individuellement
+
+    def afficher_interface(self, competences_disponibles, messages, image_path=None):
         # Affichage des compétences:
-        self.afficher_competences(self.screen, competences_disponibles)
+        self.afficher_statistiques(self.screen, image_path)
         # Affichage des actions (en dessous des compétences):
-        self.afficher_messages(self.screen)
+        self.afficher_messages(self.screen)            

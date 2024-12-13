@@ -18,19 +18,31 @@ class Competence(ABC):
 
     # Fonction permettant à l'utilisateur de sélectionner une compétence parmi celles qu'il n'a pas encore utilisé
     @staticmethod
-    def selectionner_competence(interface, screen, competences, touches_competences, competences_utilisees):
-        competences_disponibles = [c for c in competences if c.nom not in competences_utilisees]
-        interface.afficher_competences(screen, competences_disponibles) # Méthode qui met à jour l'affichage des compétences
-        while True: # Boucle principale permettant de gérer la sélection du joueur
-            for event in pygame.event.get(): # On parcourt les événements en attente
-                if event.type == pygame.QUIT: # Dans le cas où l'utilisateur ferme la fenêtre du jeu
-                    pygame.quit() # Fermeture de Pygame proprement
-                    exit() # Arrêt complet du programme
-                elif event.type == pygame.KEYDOWN: # Dans le cas où l'utilisateur presse une touche
-                    for c in competences_disponibles: # On parcourt les compétences disponibles (celles affichées à l'écran)
-                        if event.key == touches_competences.get(c.nom): # On s'assure que la touche pressée correspond à celle associée à la compétence
-                            return c # Retourne la compétence sélectionnée pour qu'elle puisse être utilisée
-        return None
+    def selectionner_competence(game, selected_unit):
+        # Dictionnaire associant les touches ("A", "B", "C", "D") avec les compétences de l'utilisateur
+        competences_disponibles = {}
+        touches = ["A", "B", "C", "D"]
+        for i in range(len(selected_unit.competences)):
+            competences_disponibles[touches[i]] = selected_unit.competences[i]
+
+        # Parcours des compétences de l'utilisateur pour les afficher dans l'interface
+        for index, (touche, competence) in enumerate(competences_disponibles.items()):
+            # Si la compétence a déjà été utilisée, on l'affiche en gris clair (128, 128, 128), sinon en blanc (255, 255, 255)
+            couleur = (128, 128, 128) if competence.nom in selected_unit.competences_utilisees else (255, 255, 255)
+            game.interface.messages.append((f"{touche}: {competence.nom}", couleur))
+
+        game.flip_display() # Actualisation de l'affichage pour montrer les compétences (et leurs touches associées)
+
+        competence_choisie = None # Variable dans laquelle on stocke la compétence choisie (initialement égale à None)
+        while competence_choisie is None: # Boucle jusqu'à ce qu'une compétence soit sélectionnée
+            for event in pygame.event.get(): # Parcours des événements capturés par pygame (clavier, souris, fermeture de fenêtre, etc.)
+                if event.type == pygame.KEYDOWN: # Dans le cas où une touche a été enfoncée
+                    for touche, competence in competences_disponibles.items(): # Parcours des compétences disponibles (et leurs touches associées)
+                        if event.key == getattr(pygame, f"K_{touche.lower()}"):
+                            if competence.nom not in selected_unit.competences_utilisees: # On s'assure que la compétence n'a pas encore été utilisée durant ce cycle
+                                competence_choisie = competence
+                                break # Arrêt de la boucle
+        return competence_choisie
     
     # Fonction permettant à l'utilisateur d'utiliser une compétence sur une cible (ou une position s'il s'agit des compétences Vortex et Téléportation)
     @staticmethod
@@ -119,7 +131,7 @@ class Competence(ABC):
                             elif event.key == pygame.K_DOWN: # Si la flèche du bas (touches fléchées) est pressée, le curseur se déplace en bas
                                 curseur_y = min(GRID_SIZE - 1, curseur_y + 1) # Restreint le curseur aux bordures de la grille (axes des ordonnées)
                             elif event.key == pygame.K_RETURN: # Validation en pressant "Entrée"
-                                return Unit(Neutral, curseur_x, curseur_y, 0, 'neutral', game.interface) # Dans le cas où aucune unité ennemie n'est trouvée, on retourne une position vide comme cible "neutre"
+                                return Unit(Neutral, curseur_x, curseur_y, 0, 'neutral', None, game.interface) # Dans le cas où aucune unité ennemie n'est trouvée, on retourne une position vide comme cible "neutre"
 
         while True: # Cas général (compétences sans zone d'effet)
             game.flip_display() # Mise à jour de l'affichage
@@ -142,7 +154,7 @@ class Competence(ABC):
                         for unit in game.enemy_units: # Parcourt les unités ennemies
                             if unit.x == curseur_x and unit.y == curseur_y: # Dans le cas où le curseur désigne une unité ennemie
                                 return unit # Retourne l'unité ennemie comme cible valide
-                        return Unit(Neutral, curseur_x, curseur_y, 0, 'neutral', game.interface)
+                        return Unit(Neutral, curseur_x, curseur_y, 0, 'neutral', None, game.interface)
                     elif event.key == pygame.K_ESCAPE: # Dans le cas où la touche "Échap" est pressée
                         return None
 
@@ -150,13 +162,14 @@ class Competence(ABC):
 
 class Poison(Competence): # Compétence offensive : une seule cible, portée de 2 cases, effet persistant (-15 PdV par tour)
     def __init__(self): # Initialisation des attributs spécifiques
-        super().__init__("Poison", portee = 2, dommage = 15, duree = 3) # Portée de l'attaque = 2, dégâts infligés = -15 PdV, durée = 2 tours
+        super().__init__("Poison", portee = 2, dommage = 15, duree = 2) # Portée de l'attaque = 2, dégâts infligés = -15 PdV, durée = 2 tours
 
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.HPloss(self.dommage, utilisateur) # Dégâts immédiats (-15 PdV)
-                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné ! Il subira {self.dommage} PdV de dégâts pendant {self.duree} tours.")
+                dmg = cible.HPloss(self.dommage, utilisateur) # Dommages infligés à la cible
+                cible.health = cible.health - dmg
+                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné(e) ! L'unité subira {dmg} PdV de dégâts pendant {self.duree} tours.")
                 cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
@@ -167,7 +180,7 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
 
 class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles, portée de 2 cases, pas d'effet persistant (-40 PdV par cible présente dans le périmètre désigné)
     def __init__(self):
-        super().__init__("Pluie de projectiles", portee = 5, dommage = 60) # Portée de l'attaque = 5, dégâts infligés = -60 PdV/cible
+        super().__init__("Pluie de projectiles", portee = 5, dommage = 40) # Portée de l'attaque = 5, dégâts infligés = -40 PdV/cible
 
     def utiliser(self, utilisateur, cible, game, interface):
         if not isinstance(cible, Unit): # On s'assure que la cible est bien une unité
@@ -185,8 +198,9 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for enemy in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
                         if enemy.x == zone_x and enemy.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
-                            enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés à/aux cible(s)
-                            interface.ajouter_message(f"{enemy.perso.nom} perd {self.dommage} points de vie.")
+                            dmg = enemy.HPloss(self.dommage, utilisateur) # Dommages infligés à/aux cible(s)
+                            enemy.health = enemy.health - dmg
+                            interface.ajouter_message(f"{enemy.perso.nom} perd {dmg} points de vie.")
                             if enemy.health <= 0: # Dans le cas où l'unité meurt
                                 game.enemy_units.remove(enemy) # Suppression de l'unité
                                 interface.ajouter_message(f"{enemy.perso.nom} a été éliminé.")
@@ -195,7 +209,7 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
 
 class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, portée de 10 cases, pas d'effet persistant (-15 PdV immédiat)
     def __init__(self):
-        super().__init__("Missile", portee = 5, dommage = 45) # Portée de l'attaque = 5, dégâts infligés = -45 PdV/cible
+        super().__init__("Missile", portee = 5, dommage = 15) # Portée de l'attaque = 5, dégâts infligés = -15 PdV/cible
 
     def utiliser(self, utilisateur, direction, game, interface):
         if direction not in ['haut', 'bas', 'gauche', 'droite']: # On s'assure que la direction choisie est valide (4 directions possibles)
@@ -210,17 +224,24 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
             dx, dy = -1, 0
         elif direction == 'droite': # Si l'utilisateur choisit la direction 'droite', le déplacement est vers la gauche (dx = 1)
             dx, dy = 1, 0
+
+        ennemis_touches = [] # Liste des ennemis touchés
         for i in range(1, self.portee + 1): # Parcourt des 5 cases du curseur (dans la direction choisie)
             x = utilisateur.x + dx * i # Coordonnée X de la case actuelle (où dx est le déplacement horizontal (par exemple, -1 pour "gauche") et i est la distance de la case par rapport à l'utilisateur)
             y = utilisateur.y + dy * i # Coordonnée Y de la case actuelle (où dx est le déplacement horizontal (par exemple, -1 pour "gauche") et i est la distance de la case par rapport à l'utilisateur)
             if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE: # On s'assure que la case est dans les limites de la grille (pour éviter les débordements)
-                for enemy in game.enemy_units[:]: # Parcourt de toutes les unités ennemies
+                for enemy in game.enemy_units: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
-                        enemy.HPloss(self.dommage, utilisateur) # Dégâts infligés (-15 PdV / cible)
-                        interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile (-{self.dommage} PdV).")
+                        dmg = enemy.HPloss(self.dommage, utilisateur) # Dommages infligés à/aux cible(s)
+                        enemy.health = enemy.health - dmg
+                        interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile ({dmg} PdV).")
+                        ennemis_touches.append(enemy)
                         if enemy.health <= 0: # Dans le cas où l'unité meurt
                             game.enemy_units.remove(enemy) # Suppression de l'unité
                             interface.ajouter_message(f"{enemy.perso.nom} a été éliminé !")
+        if not ennemis_touches: # Dans le cas où les 5 cases du curseur ne contiennent aucun ennemi
+            interface.ajouter_message("Aucune cible visée.")
+
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 
@@ -231,10 +252,11 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                cible.HPloss(self.dommage, utilisateur) # Inflige -10 PdV à l'unité cible
-                interface.ajouter_message(f"{cible.perso.nom} perd {self.dommage} points de vie à cause de Drain.")
-                utilisateur.health = min(utilisateur.max_health, utilisateur.health + self.dommage) # Régénère +10 PdV à l'unité attaquante.
-                interface.ajouter_message(f"{utilisateur.perso.nom} regagne {self.dommage} points de vie grâce à Drain.")
+                dmg = cible.HPloss(self.dommage, utilisateur) # Dommages infligés à la cible
+                cible.health = cible.health - dmg
+                interface.ajouter_message(f"{cible.perso.nom} perd {dmg} points de vie à cause de Drain.")
+                utilisateur.health = utilisateur.health + self.dommage # Régénère +10 PdV à l'unité attaquante.
+                interface.ajouter_message(f"{utilisateur.perso.nom} regagne {dmg} points de vie grâce à Drain.")
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -275,7 +297,7 @@ class Bouclier(Competence): # Compétence défensive : personnel, effet persista
 
 class Paralysie(Competence): # Compétence passive : une seule cible, portée de 3 cases, durée = 1 tour
     def __init__(self):
-        super().__init__("Paralysie", portee = 300, duree = 2) # Portée de la compétence = 2, l'effet ne dure qu'un tour
+        super().__init__("Paralysie", portee = 2, duree = 1) # Portée de la compétence = 2, l'effet ne dure qu'un tour
     
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee:  # Si la cible est à portée
