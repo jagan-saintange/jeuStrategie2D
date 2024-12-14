@@ -25,7 +25,7 @@ assets_path = {'Toad' : ".\\assets\\toad.png",
 
 
 #dictionnaire de dictionnaires contenant les propriétés supp de  des natures
-nature_carac = {#'None': {'attack_power_coeff' : 0., 'defense_power_coeff' : 0.,'agility_power_coeff' : 0., 'speed_coeff' : 0.},
+nature_carac = {
         'timide' : {'attack_power_coeff' : -0.1, 'defense_power_coeff' : 0.1,'agility_power_coeff' : -0.1, 'speed_coeff' : 0.4},
         'cool' : {'attack_power_coeff' : 0.2, 'defense_power_coeff' : -0.1,'agility_power_coeff' : 0.1, 'speed_coeff' : 0.2},
         'engagé' : {'attack_power_coeff' : 0.3, 'defense_power_coeff' : -0.2, 'agility_power_coeff' : 0.2, 'speed_coeff' : 0.1},
@@ -46,18 +46,15 @@ nature_carac = {#'None': {'attack_power_coeff' : 0., 'defense_power_coeff' : 0.,
         'démoniaque': {'attack_power_coeff': 0.5, 'defense_power_coeff': 0.4, 'agility_power_coeff': 0.0, 'speed_coeff': -0.3},
         'divin': {'attack_power_coeff': 1., 'defense_power_coeff': 1., 'agility_power_coeff': 1., 'speed_coeff': 1.},}
 
-class Personnage: #if perso.univers = le selected alors on passe toutes les unités en player1
+class Personnage:
     
     _instances = [] #on va se souvenir de toutes les instances de la classe Personnage dans une liste pour l'utiliser après
 
-    def __init__(self, nom, univers, de_type, description=None, biographie=None, icon = None):
-        self.nom = nom #est un attribut public
-        self.univers = univers #est un attribut privé non accessible par convention A RECTIFIER
+    def __init__(self, nom, de_type, icon = None):
+        self.nom = nom # Attribut public
         self.de_type = de_type #est un attribut privé avec getter et setter
-        self.de_nature = None
-        self.__nature_chooser() #générer la nature de ce personnage pour cette partie
-        self.description = description #attribut public
-        self.biographie = biographie #attribut public
+        self.de_nature = None # Nature du personnage (eau, feu, plante)
+        self.__nature_chooser() # Nature du personnage pour cette partie (générée)
         
         self.icon_set(icon)
         
@@ -70,11 +67,9 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
         elif self.nom in assets_path:
             icon_img = assets_path[self.nom]
             self.icon = pygame.image.load(icon_img)
-            #self.icon = pygame.transform.scale(self.icon, (64, 64)) 
         
         else:
             self.icon = None
-        #print(self.icon)
     
     @property
     def de_type(self):
@@ -94,7 +89,6 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
     @de_nature.setter
     def de_nature(self, value):
         self.__de_nature = value
-        #print(f'set nature est {self.__de_nature}')
     
     def __nature_chooser(self): #est une méthode privée
         de_nature = [keys for keys in nature_carac.keys()][rd.randint(0, len(nature_carac.keys())-1)]
@@ -113,20 +107,16 @@ class Personnage: #if perso.univers = le selected alors on passe toutes les unit
 
 #####################################
 
-#Personnages par univers
-Neutral = Personnage('Neutral', 'Generic', 'plante')
+# Personnages:
+Neutral = Personnage('Neutral', 'plante')
 
-Mario = Personnage('Mario', 'A', 'plante')
-Luigi = Personnage('Luigi', 'FNAF', 'feu')
-Peach = Personnage('Peach', 'FNAF', 'eau')
-Toad = Personnage('Toad', 'A', 'feu')
-
-Mickey = Personnage('Mickey', 'A', 'eau')
-Minion = Personnage('Minion', 'A', 'feu')
-Sonic = Personnage('Sonic', 'FNAF', 'feu')
-
-Pikachu = Personnage('Pikachu', 'WestCoast', 'eau')
-Clochette = Personnage('Clochette', 'philosophe', 'eau')
-Alice = Personnage('Alice', 'philosophe', 'plante')
-
-#print(Personnage.get_instances())
+Mario = Personnage('Mario', 'plante')
+Luigi = Personnage('Luigi', 'feu')
+Peach = Personnage('Peach', 'eau')
+Toad = Personnage('Toad', 'feu')
+Mickey = Personnage('Mickey', 'eau')
+Minion = Personnage('Minion', 'feu')
+Sonic = Personnage('Sonic', 'feu')
+Pikachu = Personnage('Pikachu', 'eau')
+Clochette = Personnage('Clochette', 'eau')
+Alice = Personnage('Alice', 'plante')

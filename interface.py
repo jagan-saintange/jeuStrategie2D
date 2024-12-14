@@ -1,46 +1,37 @@
 import pygame
 
 GRID_SIZE = 21 # Taille de la grille
-CELL_SIZE = 30 # Taille d'une cellule (case)
-WIDTH = GRID_SIZE * CELL_SIZE + 625 # Augmentation de l'espace pour afficher les compétences
-HEIGHT = GRID_SIZE * CELL_SIZE # Hauteur de la fenêtre
+CELL_SIZE = 30 # Taille d'une cellule (en pixels)
+WIDTH = GRID_SIZE * CELL_SIZE + 625 # Largeur totale de la fenêtre (400 = largeur de la zone des actions)
+HEIGHT = GRID_SIZE * CELL_SIZE # Hauteur totale de la fenêtre
 FPS = 30
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 BLUE = (0, 0, 255)
 GREEN = (0, 255, 0)
+GREY = (200, 200, 200)
 
 class Interface:
     def __init__(self, screen, game):
         pygame.init()
-
         self.screen = screen # Référence à l'écran principal (surface Pygame) où les éléments seront affichés
         self.game = game # Référence à l'objet du jeu principal pour permettre l'intéraction avec ses données
         self.x = 21 # Nombre de cellules sur une ligne (largeur de la grille)
         self.y = 21 # Nombre de cellules sur une colonne (hauteur de la grille)
-        self.a = 30 # Taille d'une cellule (en pixels)
-        self.b = 400 # Largeur de la zone des actions (en pixels)
-        self.WIDTH = self.x * self.a + self.b # Largeur totale de la fenêtre
-        self.HEIGHT = self.y * self.a # Hauteur totale de la fenêtre
-        self.font = pygame.font.SysFont(None, 20) # Police par défaut (taille 20)
-        self.font_competences = pygame.font.SysFont("arial", 15, bold = True) # Police pour l'affichage des compétences
         self.messages = [] # Liste servant à stocker les messages à afficher
-        self.font_actions = pygame.font.Font(None, 20) # Police pour l'affichage des actions dans la zone dédiée
+        self.font = pygame.font.Font(None, 20) # Police pour l'affichage des actions dans la zone dédiée
         self.max_messages = 20 # Limite du nombre de messages visibles
-        # Couleurs
-        self.GREY = (200, 200, 200) # Couleur de la grille
-        self.ALPHA = 125 # Transparence (0 = transparent, 255 = opaque)
         
         # Chargement du fond d'écran:
-        self.background = pygame.transform.scale(pygame.image.load("./assets/bkr.jpg"), (self.x * self.a, self.y * self.a))
+        self.background = pygame.transform.scale(pygame.image.load("./assets/bkr.jpg"), (self.x * CELL_SIZE, self.y * CELL_SIZE))
 
-        # Zone passable (True = passable, False = bloqué):
+        # Zone passable (True = passable, False = bloquée):
         self.zone_passable = [[True] * self.x for _ in range(self.y)]
 
         # Surfaces pour les éléments de premier plan (arbre, sapin, tente, etc.) ainsi que la grille:
-        self.grid_surface = pygame.Surface((self.WIDTH, self.HEIGHT), pygame.SRCALPHA)
-        self.foreground_surface = pygame.Surface((self.x * self.a, self.y * self.a), pygame.SRCALPHA)
+        self.grid_surface = pygame.Surface((WIDTH - 225, HEIGHT), pygame.SRCALPHA)
+        self.foreground_surface = pygame.Surface((self.x * CELL_SIZE, self.y * CELL_SIZE), pygame.SRCALPHA)
 
         # Définir les cases bloquées
         self.define_blocked_areas()
@@ -77,50 +68,47 @@ class Interface:
 
     def draw_foreground(self):
         # En bas, à gauche
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/sapin.png'), (self.a , self.a * 2)), (12.2 * self.a, 15 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (13.2 * self.a, 14.7 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (12.2 * self.a, 16 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/sapin.png'), (CELL_SIZE , CELL_SIZE * 2)), (12.2 * CELL_SIZE, 15 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (CELL_SIZE * 1.9, CELL_SIZE * 2)), (13.2 * CELL_SIZE, 14.7 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (CELL_SIZE * 1.9, CELL_SIZE * 2)), (12.2 * CELL_SIZE, 16 * CELL_SIZE))
         # En bas, à droite
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (17.2 * self.a, 14.8 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/sapin.png'), (self.a , self.a * 2)), (17.9 * self.a, 16 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (self.a * 1.9, self.a * 2)), (16 * self.a, 16 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (CELL_SIZE * 1.9, CELL_SIZE * 2)), (17.2 * CELL_SIZE, 14.8 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/sapin.png'), (CELL_SIZE , CELL_SIZE * 2)), (17.9 * CELL_SIZE, 16 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/arbre.png'), (CELL_SIZE * 1.9, CELL_SIZE * 2)), (16 * CELL_SIZE, 16 * CELL_SIZE))
 
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/ferme.png'), (self.a * 2.5, self.a * 2.8)), (1.3 * self.a, 12 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/chariot.png'), (self.a *1.5, self.a * 1.5)), (6.8 * self.a, 15.8 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/ferme.png'), (CELL_SIZE * 2.5, CELL_SIZE * 2.8)), (1.3 * CELL_SIZE, 12 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/chariot.png'), (CELL_SIZE *1.5, CELL_SIZE * 1.5)), (6.8 * CELL_SIZE, 15.8 * CELL_SIZE))
 
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/tente.png'), (self.a * 2, self.a * 2)), (14 * self.a, 2 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/tente.png'), (self.a * 2, self.a * 2)), (5 * self.a, 2 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/forestgauche.png'), (self.a * 6, self.a * 6)), (-1 * self.a, -1 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbregauche.png'), (self.a * 3.7, self.a * 3.7)), (4.8 * self.a, 4 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/tente.png'), (CELL_SIZE * 2, CELL_SIZE * 2)), (14 * CELL_SIZE, 2 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/tente.png'), (CELL_SIZE * 2, CELL_SIZE * 2)), (5 * CELL_SIZE, 2 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/forestgauche.png'), (CELL_SIZE * 6, CELL_SIZE * 6)), (-1 * CELL_SIZE, -1 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbregauche.png'), (CELL_SIZE * 3.7, CELL_SIZE * 3.7)), (4.8 * CELL_SIZE, 4 * CELL_SIZE))
         
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/forest.png'), (self.a * 6, self.a * 6)), (16 * self.a, -1 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12.5 * self.a, 4 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/forest.png'), (CELL_SIZE * 6, CELL_SIZE * 6)), (16 * CELL_SIZE, -1 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (CELL_SIZE * 3.7, CELL_SIZE * 3.7)), (12.5 * CELL_SIZE, 4 * CELL_SIZE))
         
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (0 * self.a, 8.9 * self.a))
-        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (self.a * 3.7, self.a * 3.7)), (12 * self.a, 10 * self.a))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (CELL_SIZE * 3.7, CELL_SIZE * 3.7)), (0 * CELL_SIZE, 8.9 * CELL_SIZE))
+        self.foreground_surface.blit(pygame.transform.scale(pygame.image.load('./assets/grandarbre.png'), (CELL_SIZE * 3.7, CELL_SIZE * 3.7)), (12 * CELL_SIZE, 10 * CELL_SIZE))
 
     # Fonction qui dessine une grille semi-transparente par-dessus la carte
     def draw_grid(self):
         self.grid_surface.fill((0, 0, 0, 0)) # Efface la grille afin qu'à chaque appel, de nouvelles lignes ne se superposent pas à celles déjà existantes
-        for row in range(self.y + 1): # Parcours des lignes de la grille (y+1 afin d'inclure les bords)
-            pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (0, row * self.a), (self.x * self.a, row * self.a)) # Surface, couleur, coordonnées de départ, coordonnées d'arrivée
-        for col in range(self.x + 1): # Parcours des colonnes de la grille (x+1 afin d'nclure les bords)
-            pygame.draw.line(self.grid_surface, (*self.GREY, self.ALPHA), (col * self.a, 0), (col * self.a, self.y * self.a)) # Surface, couleur, coordonnées de départ, coordonnées d'arrivée
+        for ligne in range(self.y + 1): # Parcours des lignes de la grille (y+1 afin d'inclure les bords)
+            pygame.draw.line(self.grid_surface, (*GREY, 125), (0, ligne * CELL_SIZE), (self.x * CELL_SIZE, ligne * CELL_SIZE)) # Surface, couleur, coordonnées de départ, coordonnées d'arrivée
+        for colonne in range(self.x + 1): # Parcours des colonnes de la grille (x+1 afin d'nclure les bords)
+            pygame.draw.line(self.grid_surface, (*GREY, 125), (colonne * CELL_SIZE, 0), (colonne * CELL_SIZE, self.y * CELL_SIZE)) # Transparence (0 = transparent, 255 = opaque)
 
-    def afficher_statistiques(self, screen, image_path):
-        #pygame.draw.rect(screen, BLACK, (GRID_SIZE * CELL_SIZE, 0, WIDTH - GRID_SIZE * CELL_SIZE, HEIGHT))  # Efface la zone
-        
+    def afficher_statistiques(self, screen, image_path):        
         # Efface la zone (rectangle noir remplacé par l'image)
-        rect_x = GRID_SIZE * CELL_SIZE
-        rect_y = -10
-        rect_width = WIDTH - GRID_SIZE * CELL_SIZE
-        rect_height = HEIGHT - 250
+        stat_x = GRID_SIZE * CELL_SIZE # Coordonnée x du début de la zone des statistiques
+        stat_y = -10 # Coordonnée y du début de la zone des statistiques
+        stat_largeur = WIDTH - GRID_SIZE * CELL_SIZE # Largeur de la zone des statistiques
+        stat_hauteur = HEIGHT - 250 # Hauteur de la zone des statistiques
 
         if image_path:
-            player_image = pygame.image.load(image_path)
-            # Redimensionne l'image pour qu'elle couvre toute la zone
-            resized_image = pygame.transform.scale(player_image, (rect_width, rect_height))
-            screen.blit(resized_image, (rect_x, rect_y))
+            # On redimensionne l'image pour qu'elle couvre toute la zone réservée aux statistiques
+            stat_joueur = pygame.transform.scale(pygame.image.load(image_path), (stat_largeur, stat_hauteur))
+            screen.blit(stat_joueur, (stat_x, stat_y))
 
     def afficher_messages(self, screen):
         x_zone = GRID_SIZE * CELL_SIZE # Coordonnée x du début de la zone des actions
@@ -131,18 +119,18 @@ class Interface:
         pygame.draw.rect(screen, (0, 0, 0), (x_zone, y_zone, largeur_zone, hauteur_zone)) # Fond noir
         pygame.draw.line(screen, (255, 255, 255), (x_zone, y_zone), (WIDTH, y_zone), 2) # Ligne de séparation
 
-        y = y_zone + 10  # Position de départ pour l'affichage des actions
+        y = y_zone + 10 # Position de départ pour l'affichage des actions
         for i, message in enumerate(self.messages[-self.max_messages:]): # Affichage des derniers messages
             if isinstance(message, tuple): # Si le message est un tuple (texte, couleur)
                 texte, couleur = message
             else: # Sinon, afficher en blanc par défaut
                 texte, couleur = message, (255, 255, 255)
 
-            surface = self.font_actions.render(texte, True, couleur) # On génère le texte avec la couleur
-            screen.blit(surface, (x_zone + 10, y + i * 19)) # Affichage le texte
+            surface = self.font.render(texte, True, couleur) # On génère le message avec la couleur
+            screen.blit(surface, (x_zone + 10, y + i * 19)) # Affichage du message
 
     def ajouter_message(self, message):
-        self.messages.append(message) # Ajout d'un nouveau message à la liste des messages (self.messages)
+        self.messages.append(str(message)) # Ajout d'un nouveau message à la liste des messages (self.messages)
         if len(self.messages) > 100: # Dans le cas où le nombre total de messages dépasse 100
             self.messages.pop(0) # Suppression du message le plus ancien (d'index 0)
 
@@ -153,7 +141,7 @@ class Interface:
             self.ajouter_message(ligne) # Ajout de chaque ligne individuellement
 
     def afficher_interface(self, competences_disponibles, messages, image_path=None):
-        # Affichage des compétences:
+        # Affichage des statistiques:
         self.afficher_statistiques(self.screen, image_path)
-        # Affichage des actions (en dessous des compétences):
+        # Affichage des actions (en dessous des statistiques):
         self.afficher_messages(self.screen)            

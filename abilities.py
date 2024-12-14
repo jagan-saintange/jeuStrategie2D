@@ -9,6 +9,7 @@ class Competence(ABC):
         self.dommage = dommage # Dégâts infligés par la compétence s'il s'agit d'une attaque
         self.duree = duree # Durée de la compétence
 
+    # Fonction permettant à l'utilisateur d'utiliser une compétence sur une cible (ou une position s'il s'agit des compétences Vortex et Téléportation)
     @abstractmethod
     def utiliser(self, utilisateur, cible, game): # Méthode abstraite à implémenter dans chaque sous-classe pour garantir la cohésion
         raise NotImplementedError("Cette méthode doit être implémentée dans les sous-classes.")
@@ -43,18 +44,6 @@ class Competence(ABC):
                                 competence_choisie = competence
                                 break # Arrêt de la boucle
         return competence_choisie
-    
-    # Fonction permettant à l'utilisateur d'utiliser une compétence sur une cible (ou une position s'il s'agit des compétences Vortex et Téléportation)
-    @staticmethod
-    def utiliser_competence(utilisateur, cible, competence, game, interface):
-        if competence and utilisateur and cible: # Dans le cas où la compétence peut être utilisée
-            competence.utiliser(utilisateur, cible, game, interface) # On l'utilise
-            if isinstance(cible, Unit) and cible.team == "enemy" and cible.health <= 0: # Dans le cas où la cible est une unité ennemie ET qu'elle n'a plus de PdV
-                if cible in game.enemy_units:
-                    game.enemy_units.remove(cible) # Suppression de la cible de la liste des ennemis
-                    interface.ajouter_message(f"{cible.perso.nom} a été éliminé(e).")
-        else:
-            interface.ajouter_message("Impossible d'utiliser la compétence. Vérifiez l'utilisateur, la cible et la compétence.")
 
 #-----------------------------------------------------------------------------------------------------------------------------------------------------------#
 # FONCTION RELATIVE AU CURSEUR (SÉLÉCTION DE CIBLE ET/OU DE CASE):
@@ -167,10 +156,13 @@ class Poison(Competence): # Compétence offensive : une seule cible, portée de 
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 2 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                dmg = cible.HPloss(self.dommage, utilisateur) # Dommages infligés à la cible
-                cible.health = cible.health - dmg
-                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné(e) ! L'unité subira {dmg} PdV de dégâts pendant {self.duree} tours.")
-                cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
+                cible.minusHP(self.dommage) # Dommages infligés à la cible 
+                interface.ajouter_message(f"{cible.perso.nom} a été empoisonné(e) ! L'unité subira {self.dommage} PdV de dégâts pendant {self.duree} tours.")
+                if cible.health <= 0: # Dans le cas où l'unité meurt
+                                game.enemy_units.remove(cible) # Suppression de l'unité
+                                interface.ajouter_message(f"{cible.perso.nom} a été éliminé.")
+                else:
+                    cible.appliquer_effet("poison", duree = self.duree, dommages = self.dommage) # Inflige -15 PdV de dégâts par tour à la cible
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -198,7 +190,7 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
                 if 0 <= zone_x < GRID_SIZE and 0 <= zone_y < GRID_SIZE: # On s'assure que seules les cases valides (celles qui sont bien dans les limites de la grille) de la matrice 3x3 sont prises en compte
                     for enemy in game.enemy_units[:]: # On s'assure que seuls les ennemis subissent les dégâts
                         if enemy.x == zone_x and enemy.y == zone_y: # Dans le cas où les untiés ennemies sont dans la zone 3x3
-                            dmg = enemy.HPloss(self.dommage, utilisateur) # Dommages infligés à/aux cible(s)
+                            dmg = enemy.HPloss(game, self.dommage, utilisateur) # Dommages infligés à/aux cible(s)
                             enemy.health = enemy.health - dmg
                             interface.ajouter_message(f"{enemy.perso.nom} perd {dmg} points de vie.")
                             if enemy.health <= 0: # Dans le cas où l'unité meurt
@@ -232,7 +224,7 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
             if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE: # On s'assure que la case est dans les limites de la grille (pour éviter les débordements)
                 for enemy in game.enemy_units: # Parcourt de toutes les unités ennemies
                     if enemy.x == x and enemy.y == y: # Vérification si un ennemi se trouve exactement sur la case atteinte
-                        dmg = enemy.HPloss(self.dommage, utilisateur) # Dommages infligés à/aux cible(s)
+                        dmg = enemy.HPloss(game, self.dommage, utilisateur) # Dommages infligés à/aux cible(s)
                         enemy.health = enemy.health - dmg
                         interface.ajouter_message(f"{enemy.perso.nom} vient d'être frappé par un missile ({dmg} PdV).")
                         ennemis_touches.append(enemy)
@@ -252,11 +244,13 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
-                dmg = cible.HPloss(self.dommage, utilisateur) # Dommages infligés à la cible
-                cible.health = cible.health - dmg
-                interface.ajouter_message(f"{cible.perso.nom} perd {dmg} points de vie à cause de Drain.")
+                cible.minusHP(self.dommage)
+                interface.ajouter_message(f"{cible.perso.nom} perd {self.dommage} points de vie à cause de Drain.")
                 utilisateur.health = utilisateur.health + self.dommage # Régénère +10 PdV à l'unité attaquante.
-                interface.ajouter_message(f"{utilisateur.perso.nom} regagne {dmg} points de vie grâce à Drain.")
+                interface.ajouter_message(f"{utilisateur.perso.nom} regagne {self.dommage} points de vie grâce à Drain.")
+                if cible.health <= 0: # Dans le cas où l'unité meurt
+                                game.enemy_units.remove(cible) # Suppression de l'unité
+                                interface.ajouter_message(f"{cible.perso.nom} a été éliminé.")
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -267,15 +261,25 @@ class Drain(Competence): # Compétence offensive : une seule cible, portée de 5
 class Soin(Competence): # Compétence défensive : personnel, pas d'effet persistant (+10 PdV immédiat)
     def __init__(self):
         super().__init__("Soin", portee = 0) # Il s'agit d'une compétence personnelle (donc portée = 0)
-        self.PdV = 10  # Nombre de points de vie récupérés par l'utilisateur
+        self._PdV = 15 # Nombre de points de vie récupérés par l'utilisateur
+
+    @property
+    def PdV(self):
+        return self._PdV
+
+    @PdV.setter
+    def PdV(self, value):
+        if value < 0:
+            raise ValueError("Les PdV doivent être supérieurs à zéro.")
+        self._PdV = value
 
     def utiliser(self, utilisateur, cible, game, interface):
         if cible is not utilisateur: # On s'assure que l'utilisateur se soigne lui-même
             interface.ajouter_message(f"Échec. {utilisateur.perso.nom} ne peut soigner que lui-même.")
             return
         if utilisateur.health < utilisateur.max_health: # Si les PdV de l'utilisateur sont < 100
-            points_recuperes = min(self.PdV, utilisateur.max_health - utilisateur.health) # Calcul du nombre de points de vie à récupérer, sans dépasser la jauge maximale
-            utilisateur.health += points_recuperes # Ajout des points de vie récupérés aux PdV de l'utilisateur
+            points_recuperes = min(self._PdV, utilisateur.max_health - utilisateur.health) # Calcul du nombre de points de vie à récupérer, sans dépasser la jauge maximale
+            utilisateur.health = utilisateur.health + points_recuperes # Ajout des points de vie récupérés aux PdV de l'utilisateur
             interface.ajouter_message(f"{utilisateur.perso.nom} regagne {points_recuperes} points de vie grâce à Soin.")
         else: # Si la barre de vie de l'utilisateur est déjà pleine
             interface.ajouter_message(f"{utilisateur.perso.nom} a déjà toute sa santé.")
@@ -303,7 +307,7 @@ class Paralysie(Competence): # Compétence passive : une seule cible, portée de
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee:  # Si la cible est à portée
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
                 cible.appliquer_effet("immobilisé", duree = 2)  # Applique l'effet
-                interface.ajouter_message(f"{cible.perso.nom} est paralysé pour {self.duree} tour.")
+                interface.ajouter_message(f"{utilisateur.perso.nom} paralyse {cible.perso.nom}. L'unité ne pourra pas se déplacer durant 1 tour.")
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -319,7 +323,7 @@ class Desarmement(Competence): # Compétence passive : une seule cible, portée 
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée (dans un rayon de 10 cases)
             if isinstance(cible, Unit) and cible.team == "enemy": # Dans le cas où la case sélectionnée contient une unité ennemie
                 cible.appliquer_effet("désarmé", duree = self.duree) # On empêche l'unité cible d'attaquer pendant 1 tour en la désarmant
-                interface.ajouter_message(f"{cible.perso.nom} est désarmé et ne peut pas attaquer pendant {self.duree} tour.")
+                interface.ajouter_message(f"{utilisateur.perso.nom} vient de désarmer {cible.perso.nom}. L'unité ne pourra pas attaquer pendant {self.duree} tour.")
             else: # Dans le cas où la case sélectionnée ne contient pas d'unité ennemie
                 interface.ajouter_message("Aucune cible sélectionnée.")
         else: # Si la cible est hors de portée
@@ -362,3 +366,5 @@ class Teleportation(Competence): # Compétence passive : personnel, aucune port�
                     utilisateur.x, utilisateur.y = nouvelle_position.x, nouvelle_position.y # Si la nouvelle position est valide, mise à jour des coordonnées de l'utilisateur
                     interface.ajouter_message(f"{utilisateur.perso.nom} a été téléporté en ({utilisateur.x}, {utilisateur.y}).")
                     break # Une fois la téléportation effectuée, on quitte la boucle
+
+#-----------------------------------------------------------------------------------------------------------------------------------------------------------#
