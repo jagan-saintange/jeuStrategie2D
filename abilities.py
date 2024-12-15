@@ -201,7 +201,7 @@ class PluieDeProjectiles(Competence): # Compétence offensive : plusieurs cibles
 
 class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, portée de 10 cases, pas d'effet persistant (-15 PdV immédiat)
     def __init__(self):
-        super().__init__("Missile", portee = 5, dommage = 15) # Portée de l'attaque = 5, dégâts infligés = -15 PdV/cible
+        super().__init__("Missile", portee = 5, dommage = 30) # Portée de l'attaque = 5, dégâts infligés = -15 PdV/cible
 
     def utiliser(self, utilisateur, direction, game, interface):
         if direction not in ['haut', 'bas', 'gauche', 'droite']: # On s'assure que la direction choisie est valide (4 directions possibles)
@@ -239,7 +239,7 @@ class Missile(Competence): # Compétence offensive : une ou plusieurs cibles, po
 
 class Drain(Competence): # Compétence offensive : une seule cible, portée de 5 cases, pas d'effet persistant (-10 PdV immédiat)
     def __init__(self):
-        super().__init__("Drain", portee = 5, dommage = 10) # Portée de l'attaque = 5, dégâts infligés = -10 PdV
+        super().__init__("Drain", portee = 5, dommage = 20) # Portée de l'attaque = 5, dégâts infligés = -10 PdV
 
     def utiliser(self, utilisateur, cible, game, interface):
         if abs(utilisateur.x - cible.x) + abs(utilisateur.y - cible.y) <= self.portee: # Si la cible est à portée, soit dans un rayon de 5 cases autour de l'attaquant
