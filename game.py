@@ -249,7 +249,7 @@ class Game: # Classe pour représenter le jeu
                                 # On s'assure que la case est passable avant de permettre le déplacement
                             new_col = enemy.x + dx
                             new_row = enemy.y + dy
-                            if self.interface.passable(new_row, new_col):
+                            if self.interface.passable(new_row, new_col,):
                                 print('essai 1',dx, dy)
                                 essai = enemy.move(dx, dy, self.enemy_units, self.player_units)
                                 time.sleep(0.3)
