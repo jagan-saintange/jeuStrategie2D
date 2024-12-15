@@ -45,6 +45,7 @@ class Game: # Classe pour représenter le jeu
     def handle_player_turn(self):
         """Tour du joueur"""
         for selected_unit in self.player_units:
+            selected_unit.current_move = 0
             has_acted = False # Indique si l'utilisateur a agi pendant ce tour
             selected_unit.is_selected = True # Indique si l'utilisateur est sélectionnée
             # Gestion des effets actifs sur l'unité
@@ -87,7 +88,9 @@ class Game: # Classe pour représenter le jeu
                                 moved = selected_unit.move(dx, dy, self.player_units, self.enemy_units) # Déplacement de l'unité
                                 if moved == 0: # Dans le cas où l'unité a bougé
                                     max_deplacements -= 1 # Réduction du nombre de déplacements restants
-                                self.interface.ajouter_message(f"Déplacements restants : {max_deplacements}")
+                                    self.interface.ajouter_message(f"Déplacements restants : {max_deplacements}")
+                                elif moved == 1:
+                                    self.interface.ajouter_message("Zone bloquée. Prenez une autre direction.")
                             else:
                                 self.interface.ajouter_message("Zone bloquée. Prenez une autre direction.")
                         break
