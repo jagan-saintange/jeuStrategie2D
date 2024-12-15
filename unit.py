@@ -29,18 +29,10 @@ class Unit():
 
 
     def move(self, dx, dy, player_units, enemy_units):
-        # Vérifie si l'unité est immobilisée
-        if any(effet["effet"] == "immobilisé" for effet in self.effects):
-            print(f"{self.perso.nom} est paralysé(e).")
-            return False # Déplacement impossible
         if self.current_move < self.nombre_deplacements:
             if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
                 try_x = self.x + dx
                 try_y = self.y + dy
-                #if not self.interface.passable(try_x, try_y):
-                #    print('Passage refusé !')
-                #    self.interface.ajouter_message(f"Passage refusé vers ({self.x}, {self.y}).")
-                #    return 1
                 if self in enemy_units:
                     print("move d'un enemy")
                     for enemy in enemy_units:

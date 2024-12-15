@@ -85,9 +85,9 @@ class Game: # Classe pour représenter le jeu
                             # On s'assure de rester dans les limites de la grille et d'accéder à une case dite "passable"
                             if 0 <= new_ligne < GRID_SIZE and 0 <= new_colonne < GRID_SIZE and self.interface.passable(new_ligne, new_colonne):
                                 moved = selected_unit.move(dx, dy, self.player_units, self.enemy_units) # Déplacement de l'unité
-                                if moved: # Dans le cas où l'unité a bougé
+                                if moved == 0: # Dans le cas où l'unité a bougé
                                     max_deplacements -= 1 # Réduction du nombre de déplacements restants
-                                    self.interface.ajouter_message(f"Déplacements restants : {max_deplacements}")
+                                self.interface.ajouter_message(f"Déplacements restants : {max_deplacements}")
                             else:
                                 self.interface.ajouter_message("Zone bloquée. Prenez une autre direction.")
                         break
