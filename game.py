@@ -148,15 +148,7 @@ class Game: # Classe pour représenter le jeu
 
     def handle_enemy_turn(self):
         """IA pour les ennemis."""
-        for enemy in self.enemy_units[:]: # Parcours une copie de la liste pour éviter des erreurs de modification pendant l'itération
-            if enemy.health <= 0: # Si l'ennemi est mort
-                continue # On passe au prochain ennemi
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-
+        for enemy in self.enemy_units:
             for effet in enemy.effects[:]:
                 if effet["effet"] == "poison":
                     enemy.minusHP(effet["dommages"]) # Applique les dégâts du poison
@@ -173,17 +165,17 @@ class Game: # Classe pour représenter le jeu
                     if effet["duree"] <= 0:
                         self.interface.ajouter_message(f"{enemy.perso.nom} n'est plus affecté par {effet['effet']}.")
                         enemy.effects.remove(effet) # Supprime l'effet expiré
+
             self.enemy_units = [e for e in self.enemy_units if e.health > 0] # Nettoyage immédiat après effet
-            # Vérifie si l'ennemi est immobilisé (paralysie)
             if any(effet["effet"] == "immobilisé" for effet in enemy.effects):
                 self.interface.ajouter_message(f"{enemy.perso.nom} est paralysé(e) durant ce tour.")
                 self.handle_enemy_attack(enemy)
                 continue # Passe au prochain ennemi
-            
+
             cibles_possibles = [unit for unit in self.player_units if unit.health > 0]
             if not cibles_possibles:
                 continue
-
+            
             if len(self.enemy_units) != 0 and len(self.player_units) != 0:
             # Déplacement aléatoire différencié selon le niveau de l'IA (normalement, l'intelligence de l'ia augmente de façon exponnentielle jusqu'à probablement atteindre un plafond, il faudrait étudier la fonction)
                 target = random.choice(cibles_possibles)
@@ -203,34 +195,37 @@ class Game: # Classe pour représenter le jeu
                 
                 enemy.current_move = 0
                 essai = 0 #essai = 0 si le move est successful, si le move rate :  essai = 1. 0 et 1 sont aussi des bools  reconnus
+                print(target)
                 while enemy.current_move < enemy.nombre_deplacements:
                     self.flip_display()
-                    for event in pygame.event.get():
-                        if event.type == pygame.QUIT:
-                            pygame.quit()
-                            sys.exit()
                     if essai : #tentatives suivante si le essai de else n'a pas fonctionné
-                        if abs(enemy.x - target.x) <= 1 and abs(enemy.y - target.y) <= 1:
+                        for combattant in self.player_units:
+                            oui = abs(enemy.x - combattant.x) <= 1 and abs(enemy.y - combattant.y) <= 1
+                            if oui: # un joueur à portée
+                                target = combattant #il devient le nouveau cible
+                                break # sors de la recherche de combattant
+                        if oui:
                             print('essai 2')
                             break #si l'ennemi est à portée, plus besoin de se déplacer
                         else:
                             for _ in range(LEVEL):
-                                dx, dy = 0, 0
+                                dx, dy =0, 0
+                                #while abs(dx+ dy)!=1:
                                 dx = random.randint(-1, 1)
                                 dy = random.randint(-1, 1)
                                 new_col = enemy.x + dx
                                 new_row = enemy.y + dy
-                                if dx != 0 and dy != 0:
+                                if dx !=0 and dy!=0:
                                     if random.randint(0, 1) == 0:
                                         dx = 0
                                     else:
                                         dy = 0
                                             
-                                # On s'assure que la case est passable avant de permettre le déplacement
+                                    # On s'assure que la case est passable avant de permettre le déplacement
                                 if self.interface.passable(new_row, new_col):
                                     print('essai 3', new_row, new_col)
                                     essai = enemy.move(dx, dy, self.enemy_units, self.player_units) #mouvement aléatoire pour essayer de se débloquer
-                                    pygame.time.wait(100)
+                                    time.sleep(0.3)
                                 else:    
                                     essai = 1
                                 self.flip_display()
@@ -247,7 +242,11 @@ class Game: # Classe pour représenter le jeu
                                     dx = 0
                                 else:
                                     dy = 0
-
+                            print(dx, dy)
+                            
+                            #print(dx, dy)
+                            #for j in range(LEVEL):
+                                # On s'assure que la case est passable avant de permettre le déplacement
                             new_col = enemy.x + dx
                             new_row = enemy.y + dy
                             if self.interface.passable(new_row, new_col):
@@ -257,7 +256,12 @@ class Game: # Classe pour représenter le jeu
                                 if essai ==0:
                                     break
                             essai = 1
+                            #time.sleep(0.3)
+                                #break
                 
+                        #print(enemy.current_move)
+                
+                    
                 enemy.current_move = 0
             self.interface.ajouter_message(f"{enemy.perso.nom} s'est déplacé en ({enemy.x}, {enemy.y}).")
 
@@ -295,6 +299,10 @@ class Game: # Classe pour représenter le jeu
             time.sleep(60) # Temps laissé à l'utilisateur pour lire le message
             pygame.quit() # Fermeture de Pygame proprement
             sys.exit() # On s'assure que la condition de fin de jeu n'est pas remplie (victoire ou défaite)
+    
+    def curseur(self, selected_unit):
+        pygame.draw.rect(self.screen, RED, (selected_unit.x * CELL_SIZE, selected_unit.y * CELL_SIZE, CELL_SIZE, CELL_SIZE), 3)
+            
 
     def handle_enemy_attack(self, enemy):
         # Identification des cibles adjacentes

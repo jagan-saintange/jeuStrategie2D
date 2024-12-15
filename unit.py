@@ -1,6 +1,5 @@
 import pygame
 import random as rd
-from abc import ABC, abstractmethod
 from personnages import *
 from interface import *
 
