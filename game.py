@@ -373,11 +373,11 @@ def main():
     # Initialisation de Pygame
     pygame.init()
     # Initialisation du module mixer de Pygame, nécessaire pour gérer les fonctionnalités audio
-    pygame.mixer.init()
+    #pygame.mixer.init()
     # Chargement de la musique de fond
-    pygame.mixer.music.load("./assets/musique.mp3")
-    pygame.mixer.music.set_volume(0.5) # Volume (0.0 à 1.0)
-    pygame.mixer.music.play(-1) # -1 pour jouer la musique en boucle
+    #pygame.mixer.music.load("./assets/musique.mp3")
+    #pygame.mixer.music.set_volume(0.5) # Volume (0.0 à 1.0)
+    #pygame.mixer.music.play(-1) # -1 pour jouer la musique en boucle
     # Instanciation de la fenêtre
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Mon jeu de stratégie")

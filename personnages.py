@@ -100,11 +100,6 @@ class Personnage:
         # Return a copy of the list of instances
         return cls._instances.copy()
 
-    @abstractmethod #will be defined in heritage class, mais j'implémente déjà ici car c'est ici qu'on définit la nature et c'est dans les héritiers de Unit qu'on assigne des stats 
-    #aussi in case of developpement de futur d'effets différents pour les conséquences de la nature en fonction des classes
-    def nature_effect(self):
-        pass
-
 #####################################
 
 # Personnages:

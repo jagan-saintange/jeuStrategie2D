@@ -29,22 +29,48 @@ class Unit():
 
 
     def move(self, dx, dy, player_units, enemy_units):
-        # Vérifie si le déplacement reste dans les limites de la grille
-        new_x = self.x + dx
-        new_y = self.y + dy
-        if new_x < 0 or new_x >= GRID_SIZE or new_y < 0 or new_y >= GRID_SIZE: # Déplacement en dehors de la grille
-            return False
-
-        for unit in player_units + enemy_units:
-            if unit.x == new_x and unit.y == new_y: # Dans le cas où la case cible est occupée par une autre unité
-                self.x, unit.x = unit.x, self.x
-                self.y, unit.y = unit.y, self.y
-                return True # Swap réussi
-
-        # Si toutes les vérifications sont passées, déplacer l'unité
-        self.x = new_x
-        self.y = new_y
-        return True # Déplacement réussi
+        # Vérifie si l'unité est immobilisée
+        if any(effet["effet"] == "immobilisé" for effet in self.effects):
+            print(f"{self.perso.nom} est paralysé(e).")
+            return False # Déplacement impossible
+        if self.current_move < self.nombre_deplacements:
+            if 0 <= self.x + dx < GRID_SIZE and 0 <= self.y + dy < GRID_SIZE:
+                try_x = self.x + dx
+                try_y = self.y + dy
+                #if not self.interface.passable(try_x, try_y):
+                #    print('Passage refusé !')
+                #    self.interface.ajouter_message(f"Passage refusé vers ({self.x}, {self.y}).")
+                #    return 1
+                if self in enemy_units:
+                    print("move d'un enemy")
+                    for enemy in enemy_units:
+                        if enemy.x == try_x and enemy.y == try_y and self != enemy:
+                            enemy.x, self.x = self.x, enemy.x
+                            enemy.y, self.y = self.y, enemy.y
+                            print(f'{self.perso.nom} swaps avec {enemy.perso.nom} !')
+                            return 0
+                        for player in player_units:
+                            if player.x == try_x and player.y == try_y:
+                                print('déplacement impossible !')
+                                #self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                                return 1
+                        
+                               
+                for enemy in enemy_units:
+                    if (enemy.x == try_x and enemy.y == try_y):
+                        print('déplacement impossible !')
+                        #self.interface.ajouter_message(f"déplacement impossible vers ({self.x}, {self.y}).")
+                        return 1
+                for player in player_units:
+                    if player.x == try_x and player.y == try_y:
+                        player.x, self.x = self.x, player.x
+                        player.y, self.y = self.y, player.y
+                        print(f'{self.perso.nom} swaps avec {player.perso.nom} !')
+                        return 0
+                self.x = try_x
+                self.y = try_y
+                self.current_move += 1
+                return 0
 
     def effectuer_attaque_directe(self, game, interface, screen, enemy_units):
         """Gère l'attaque directe après sélection de la cible."""
